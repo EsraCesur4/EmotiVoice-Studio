@@ -7,7 +7,7 @@ FROM python:3.10-slim
 # git → required for Hugging Face / Whisper downloads
 # libsndfile1 → needed for soundfile
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg espeak-ng git libsndfile1 \
+    ffmpeg espeak-ng git libsndfile1 libsm6 libxext6 \
  && rm -rf /var/lib/apt/lists/*
 
 # ========== Working Directory ==========
@@ -29,9 +29,10 @@ RUN python -m nltk.downloader -d /usr/local/share/nltk_data \
 COPY . .
 
 # ========== Pre-download Hugging Face Emotion Model ==========
+# (optional optimization: use --user to avoid permissions issues)
 RUN python -c "from transformers import AutoTokenizer, AutoModelForSequenceClassification; \
-AutoTokenizer.from_pretrained('esracesur/roberta_weighted'); \
-AutoModelForSequenceClassification.from_pretrained('esracesur/roberta_weighted')"
+AutoTokenizer.from_pretrained('esracesur/roberta_weighted', use_auth_token=False); \
+AutoModelForSequenceClassification.from_pretrained('esracesur/roberta_weighted', use_auth_token=False)"
 
 # ========== Environment Variables ==========
 ENV PYTHONUNBUFFERED=1 \
@@ -44,13 +45,13 @@ ENV PYTHONUNBUFFERED=1 \
     TRANSFORMERS_CACHE=/tmp/huggingface \
     TORCH_HOME=/tmp/torch \
     XDG_CACHE_HOME=/tmp \
-    WHISPER_CACHE_DIR=/tmp
-
-
+    WHISPER_CACHE_DIR=/tmp \
+    IMAGEIO_FFMPEG_EXE=/usr/bin/ffmpeg \
+    TMPDIR=/tmp
 
 # ========== Expose Port ==========
 EXPOSE 7860
 
 # ========== Run the App ==========
 WORKDIR /app/backend
-CMD ["python", "app.py"]
+CMD ["python", "app.py", "--host", "0.0.0.0", "--port", "7860"]
