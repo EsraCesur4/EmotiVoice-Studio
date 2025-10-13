@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ========== Working Directory ==========
 WORKDIR /app
 
+# Writable, persistent storage for Hugging Face / Docker
+VOLUME ["/data"]
+
 # ========== Copy & Install Python Dependencies ==========
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

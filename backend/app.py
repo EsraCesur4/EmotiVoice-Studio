@@ -24,17 +24,20 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
 
-# Configuration
+from pathlib import Path
+import os
+
 BASE_DIR = Path(__file__).parent.parent
 
-BASE_DATA = Path(os.getenv("DATA_DIR", BASE_DIR))
+# Use /data (persistent and writable on Hugging Face)
+BASE_DATA = Path(os.getenv("DATA_DIR", "/data"))
 UPLOAD_FOLDER = BASE_DATA / "uploads"
 OUTPUT_FOLDER = BASE_DATA / "outputs"
 
 MOUTH_ROOT = BASE_DIR / "assets" / "mouthsets"
+AVATAR_ROOT = BASE_DIR / "assets" / "avatar"
 LIPSYNC_SCRIPT = Path(__file__).parent / "lipsync.py"
 TEXT_AVATAR_SCRIPT = Path(__file__).parent / "text_to_avatar.py"
-AVATAR_ROOT = BASE_DIR / "assets" / "avatar"
 
 # Create folders
 UPLOAD_FOLDER.mkdir(exist_ok=True)
@@ -685,10 +688,6 @@ if __name__ == '__main__':
         print("    Avatar customization disabled")
     print("\n Ctrl+C to stop\n")
     
-    import os
-    from pathlib import Path
-
-    # Ensure folders exist at runtime
     UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
     OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
 
