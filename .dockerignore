@@ -1,0 +1,51 @@
+# ===== Python build artifacts =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+
+# ===== Virtual environments =====
+.venv/
+venv/
+env/
+ENV/
+
+# ===== OS / IDE files =====
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ===== Git / Docker =====
+.git/
+.gitignore
+Dockerfile
+*.md
+
+# ===== Caches =====
+*.egg-info/
+*.egg/
+build/
+dist/
+.cache/
+pip-wheel-metadata/
+
+# ===== Temporary and generated files =====
+*.bak
+*.old
+*.out
+*.mp4
+*.wav
+*.json
+*.zip
+
+# ===== Local folders (can be mounted as volumes) =====
+backend/uploads/
+backend/outputs/
+
+# ===== Tests (optional) =====
+tests/

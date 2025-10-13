@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Lipsync Chat Demo</title>
+    <style>
+        /* General Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            /* Lighter Background Change: From dark to subtle light grey/white gradient */
+            background: linear-gradient(135deg, #f4f7f6 0%, #dfe4e6 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Phone Container */
+        .phone-container {
+            position: relative;
+            width: 430px;
+            height: 850px;
+            background: #ffffff; /* White background for the outer shell */
+            border-radius: 50px;
+            /* Softer, more modern shadow and border */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
+            border: 8px solid #333; /* Darker, thinner border for contrast */
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        /* Subtle Hover Effect */
+        .phone-container:hover {
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.08);
+        }
+
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            /* Slightly smaller and less intrusive notch */
+            width: 150px;
+            height: 28px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            z-index: 100;
+        }
+
+        .screen {
+            height: 100%;
+            /* Solid, clean background for the screen area */
+            background: #ffffff; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 40px 8px; /* Adjusted padding */
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .battery {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Lighter shadow */
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f3f4f6; /* Very subtle bottom border */
+        }
+
+        .back-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3498db; /* New primary color */
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .avatar {
+            width: 44px; /* Slightly larger avatar */
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #9b59b6, #e74c3c); /* Updated gradient colors */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-weight: 700; /* Bolder name */
+            color: #111827;
+            font-size: 17px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #2ecc71; /* New active status color */
+            margin-top: 2px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #2ecc71;
+            border-radius: 50%;
+        }
+
+        .more-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #95a5a6; /* Subtler color */
+            transition: background 0.2s;
+        }
+        
+        .more-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background-color: #f9f9f9; /* Subtle chat background color */
+        }
+
+        .message {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.sent {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .message.sent .message-avatar {
+            background: linear-gradient(135deg, #3498db, #2980b9); /* Sent message avatar gradient */
+        }
+
+        .message.received .message-avatar {
+            background: linear-gradient(135deg, #9b59b6, #e74c3c);
+        }
+
+        .message-content {
+            max-width: 75%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.sent .message-content {
+            align-items: flex-end;
+        }
+
+        .bubble {
+            border-radius: 20px; /* Slightly rounder bubbles */
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+            word-wrap: break-word; /* Ensure long words wrap */
+        }
+
+        .message.sent .bubble {
+            background: linear-gradient(135deg, #3498db, #2980b9); /* Primary blue gradient */
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message.received .bubble {
+            background: #ffffff; /* White bubble for received messages */
+            color: #1f2937;
+            border-bottom-left-radius: 6px;
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .video-container video {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 12px;
+        }
+
+        .message-text {
+            padding: 12px 16px;
+            font-size: 15px; /* Slightly larger text */
+            line-height: 1.5;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: #95a5a6; /* Softer timestamp color */
+            margin-top: 4px;
+            padding: 0 8px;
+        }
+
+        .processing {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            justify-content: flex-end;
+        }
+
+        .processing-bubble {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 20px;
+            border-bottom-right-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: bounce 0.6s infinite;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .input-area {
+            background: white;
+            border-top: 1px solid #f3f4f6;
+            padding: 12px 16px;
+        }
+
+        .recording-ui {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fef2f2;
+            border: 2px solid #fecaca;
+            border-radius: 25px; /* Slightly smaller radius */
+            padding: 10px 18px; /* Slightly less padding */
+        }
+
+        .recording-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .recording-dot {
+            width: 12px;
+            height: 12px;
+            background: #e74c3c; /* Red dot */
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .recording-label {
+            color: #c0392b; /* Darker red label */
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .recording-time {
+            color: #e74c3c;
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        .stop-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+
+        .stop-btn:hover {
+            background: #c0392b;
+        }
+
+        .input-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn {
+            width: 44px; /* Slightly smaller button */
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .mic-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .mic-btn:hover {
+            box-shadow: 0 6px 14px rgba(52, 152, 219, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .mic-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-placeholder {
+            flex: 1;
+            background: #f3f4f6;
+            border-radius: 25px; /* Consistent radius */
+            padding: 12px 16px;
+            font-size: 15px;
+            color: #95a5a6; /* Softer color */
+        }
+
+        .home-indicator {
+            display: flex;
+            justify-content: center;
+            padding: 8px 0 12px;
+            background: white;
+        }
+
+        .indicator-bar {
+            width: 128px;
+            height: 4px;
+            background: #95a5a6; /* Softer indicator color */
+            border-radius: 2px;
+            opacity: 0.6;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .audio-options {
+            position: absolute;
+            bottom: 60px; /* Adjusted position to align with new button size */
+            right: 16px;
+            background: white;
+            border-radius: 12px; /* Smaller radius */
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1); /* Lighter shadow */
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 50;
+        }
+
+        .audio-options.show {
+            display: flex;
+            animation: popIn 0.2s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .audio-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px; /* Slightly less padding */
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 14px;
+            color: #34495e;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .audio-option-btn:hover {
+            background: #ecf0f1; /* Light hover background */
+        }
+
+        .audio-option-btn svg {
+            flex-shrink: 0;
+        }
+
+        /* Customization Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5); /* Slightly lighter overlay */
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex !important;
+        }
+
+        .customization-modal {
+            background: white;
+            border-radius: 16px; /* Smaller radius */
+            padding: 24px;
+            width: 90%;
+            max-width: 380px; /* Slightly wider modal */
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .avatar-preview {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 24px;
+            border-radius: 12px;
+            background: #ecf0f1; /* Lighter background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .avatar-preview canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .preview-loading {
+            color: #6b7280;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #34495e; /* Darker text */
+        }
+
+        .close-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #f3f4f6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #95a5a6;
+        }
+
+        .close-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .option-group {
+            margin-bottom: 20px;
+        }
+
+        .option-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .option-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .option-btn {
+            padding: 8px 14px; /* Adjusted padding */
+            border-radius: 10px;
+            border: 2px solid #ecf0f1; /* Lighter border */
+            background: white;
+            color: #7f8c8d;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: capitalize;
+        }
+
+        .option-btn:hover {
+            border-color: #3498db;
+            color: #3498db;
+        }
+
+        .option-btn.selected {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border-color: #3498db;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .save-btn:hover {
+            transform: scale(1.01);
+        }
+
+        /* Tutorial Overlay */
+        .tutorial-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tutorial-overlay.show {
+            display: flex;
+        }
+
+        .tutorial-card {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+            position: relative;
+        }
+
+        .tutorial-step {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .tutorial-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+
+        .tutorial-text {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .tutorial-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .tutorial-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tutorial-btn.skip {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .tutorial-btn.skip:hover {
+            background: #e5e7eb;
+        }
+
+        .tutorial-btn.next {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .tutorial-btn.next:hover {
+            transform: scale(1.05);
+        }
+
+        .tutorial-progress {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .progress-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            transition: all 0.3s;
+        }
+
+        .progress-dot.active {
+            background: #3498db;
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        /* Progress Bar for Video Generation */
+        .video-progress-container {
+            width: 100%;
+            padding: 24px;
+        }
+
+        .progress-steps {
+            margin-bottom: 24px;
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            opacity: 0.4;
+            transition: opacity 0.3s;
+        }
+
+        .progress-step.active {
+            opacity: 1;
+        }
+
+        .progress-step.complete {
+            opacity: 1;
+        }
+
+        .step-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e5e7eb;
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        .progress-step.active .step-icon {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .progress-step.complete .step-icon {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .step-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .step-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .step-text {
+            flex: 1;
+        }
+
+        .step-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .step-description {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="notch"></div>
+        
+        <div class="screen">
+            <div class="status-bar">
+                <span>9:41</span>
+                <div class="battery">
+                    <span>100%</span>
+                </div>
+            </div>
+
+            <div class="header">
+                <button class="back-btn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <div class="avatar">AI</div>
+                <div class="header-info">
+                    <div class="contact-name">Emotion AI</div>
+                    <div class="status">
+                        <span class="status-dot"></span>
+                        Active now
+                    </div>
+                </div>
+                <button class="more-btn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="messages-area" id="messagesArea">
+                <div class="message received">
+                    <div class="message-avatar"></div>  <div class="message-content">
+                        <div class="bubble">
+                            <div class="message-text">Hey! Send me a voice message 🎤</div>
+                        </div>
+                        <div class="timestamp">2:19 PM</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div id="recordingUI" class="recording-ui hidden">
+                    <div class="recording-info">
+                        <div class="recording-dot"></div>
+                        <span class="recording-label">Recording</span>
+                        <span class="recording-time" id="recordingTime">0:00</span>
+                    </div>
+                    <button class="stop-btn" onclick="stopRecording()">
+                        <svg fill="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                            <rect x="6" y="6" width="12" height="12" rx="2"/>
+                        </svg>
+                        Stop
+                    </button>
+                </div>
+
+                <div id="inputControls" class="input-controls">
+                    <div class="input-placeholder">Type a message...</div>
+                    <button class="control-btn mic-btn" id="micBtn" onclick="toggleAudioOptions()">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="audio-options" id="audioOptions">
+                    <button class="audio-option-btn" onclick="openCustomization(); hideAudioOptions();">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        Customize Character
+                    </button>
+                    <button class="audio-option-btn" onclick="startRecording(); hideAudioOptions();">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                        </svg>
+                        Record Audio
+                    </button>
+                    <button class="audio-option-btn" onclick="document.getElementById('fileInput').click(); hideAudioOptions();">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        Upload Audio
+                    </button>
+                </div>
+
+                <input type="file" id="fileInput" accept="audio/*" style="display: none;" onchange="handleFileUpload(event)">
+            </div>
+
+            <div class="home-indicator">
+                <div class="indicator-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="customizationModal">
+        <div class="customization-modal">
+            <div class="modal-header">
+                <h3 class="modal-title">🎨 Customize Avatar</h3>
+                <button class="close-btn" onclick="closeCustomization()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="avatar-preview" id="avatarPreview">
+                <canvas id="avatarCanvas" width="400" height="400"></canvas>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">Gender</label>
+                <div class="option-buttons" id="genderOptions">
+                    <button class="option-btn selected" data-value="female" onclick="selectOption('gender', 'female', this)">Female</button>
+                    <button class="option-btn" data-value="male" onclick="selectOption('gender', 'male', this)">Male</button>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">Hair Style</label>
+                <div class="option-buttons" id="hairStyleOptions">
+                    </div>
+            </div>
+
+            <div class="option-group" id="hairColorGroup">
+                <label class="option-label">Hair Color</label>
+                <div class="option-buttons" id="hairColorOptions">
+                    <button class="option-btn" data-value="black" onclick="selectOption('hair_color', 'black', this)">Black</button>
+                    <button class="option-btn" data-value="blonde" onclick="selectOption('hair_color', 'blonde', this)">Blonde</button>
+                    <button class="option-btn" data-value="blue" onclick="selectOption('hair_color', 'blue', this)">Blue</button>
+                    <button class="option-btn selected" data-value="brown" onclick="selectOption('hair_color', 'brown', this)">Brown</button>
+                    <button class="option-btn" data-value="light_brown" onclick="selectOption('hair_color', 'light_brown', this)">Light Brown</button>
+                    <button class="option-btn" data-value="orange" onclick="selectOption('hair_color', 'orange', this)">Orange</button>
+                    <button class="option-btn" data-value="red" onclick="selectOption('hair_color', 'red', this)">Red</button>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">Eye Color</label>
+                <div class="option-buttons" id="eyeColorOptions">
+                    <button class="option-btn" data-value="black" onclick="selectOption('eye_color', 'black', this)">Black</button>
+                    <button class="option-btn" data-value="blue" onclick="selectOption('eye_color', 'blue', this)">Blue</button>
+                    <button class="option-btn selected" data-value="brown" onclick="selectOption('eye_color', 'brown', this)">Brown</button>
+                    <button class="option-btn" data-value="green" onclick="selectOption('eye_color', 'green', this)">Green</button>
+                </div>
+            </div>
+
+            <button class="save-btn" onclick="saveCustomization()">Save & Use Avatar</button>
+        </div>
+    </div>
+
+    <script>
+        // *** ORIGINAL JAVASCRIPT LOGIC RESTORED ***
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordingInterval;
+        let recordingSeconds = 0;
+        let messageCounter = 2;
+        
+        // Avatar customization state
+        let avatarConfig = {
+            gender: 'female',
+            hair_style: 'wavy',
+            hair_color: 'brown',
+            eye_color: 'brown'
+        };
+
+        // Hair style options per gender
+        const hairStyles = {
+            male: ['curly', 'shaved', 'straight'],
+            female: ['curly', 'short', 'straight', 'wavy']
+        };
+
+        // Initialize hair styles on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            updateHairStyleOptions('female');
+            updateAvatarPreview(); // Show initial preview
+        });
+
+        // Avatar preview function
+        async function updateAvatarPreview() {
+            const canvas = document.getElementById('avatarCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Build avatar preview URL (backend should serve this)
+            const gender = avatarConfig.gender;
+            const hairStyle = avatarConfig.hair_style;
+            const hairColor = avatarConfig.hair_color;
+            const eyeColor = avatarConfig.eye_color;
+            
+            // Normalize male eye emotion folder names
+            const eyeEmotion = gender === 'male' ? 'neutral' : 'neutral';
+            
+            // Load layers
+            const layers = [];
+            
+            try {
+                // Hair layer (handle shaved case)
+                let hairPath;
+                if (hairStyle === 'shaved') {
+                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/shaved.png`;
+                } else {
+                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/${hairColor}.png`;
+                }
+                
+                // Eyes layer
+                const eyesPath = `/assets/avatar/${gender}/eyes/${eyeEmotion}/${eyeColor}.png`;
+                
+                // Mouth layer (REST for neutral)
+                const mouthPath = `/assets/avatar/${gender}/mouthshapes/neutral/REST.png`;
+                
+                // Load all images
+                const loadImage = (src) => {
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => resolve(img);
+                        img.onerror = () => {
+                            console.error('Failed to load:', src);
+                            resolve(null); // Continue even if image fails
+                        };
+                        img.src = src;
+                    });
+                };
+                
+                const [hairImg, eyesImg, mouthImg] = await Promise.all([
+                    loadImage(hairPath),
+                    loadImage(eyesPath),
+                    loadImage(mouthPath)
+                ]);
+                
+                // Draw layers in order: hair -> eyes -> mouth
+                if (hairImg) ctx.drawImage(hairImg, 0, 0, width, height);
+                if (eyesImg) ctx.drawImage(eyesImg, 0, 0, width, height);
+                if (mouthImg) ctx.drawImage(mouthImg, 0, 0, width, height);
+                
+            } catch (error) {
+                console.error('Error loading avatar preview:', error);
+                // Show error message on canvas
+                ctx.fillStyle = '#6b7280';
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Preview unavailable', width / 2, height / 2);
+            }
+        }
+
+        function updateHairStyleOptions(gender) {
+            const container = document.getElementById('hairStyleOptions');
+            container.innerHTML = '';
+            
+            const styles = hairStyles[gender];
+            styles.forEach((style, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn' + (index === styles.length - 1 ? ' selected' : '');
+                btn.setAttribute('data-value', style);
+                btn.textContent = style.replace('_', ' ');
+                btn.onclick = function() { selectOption('hair_style', style, this); };
+                container.appendChild(btn);
+            });
+            
+            // Update avatar config
+            avatarConfig.hair_style = styles[styles.length - 1];
+        }
+
+        function selectOption(category, value, button) {
+            const siblings = button.parentElement.querySelectorAll('.option-btn');
+            siblings.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            avatarConfig[category] = value;
+            
+            if (category === 'gender') {
+                updateHairStyleOptions(value);
+                updateHairColorVisibility();
+            }
+            
+            if (category === 'hair_style') {
+                updateHairColorVisibility();
+            }
+            
+            // Update preview when any option changes
+            updateAvatarPreview();
+            
+            console.log('Avatar config updated:', avatarConfig);
+        }
+
+        function updateHairColorVisibility() {
+            const hairColorGroup = document.getElementById('hairColorGroup');
+            if (avatarConfig.hair_style === 'shaved') {
+                hairColorGroup.style.display = 'none';
+            } else {
+                hairColorGroup.style.display = 'block';
+            }
+        }
+
+        function openCustomization() {
+            console.log('Opening customization modal...');
+            document.getElementById('customizationModal').classList.add('show');
+        }
+
+        function closeCustomization() {
+            document.getElementById('customizationModal').classList.remove('show');
+        }
+
+        function saveCustomization() {
+            closeCustomization();
+            alert('Avatar customized! Your next message will use this avatar. 🎨');
+        }
+        
+        function toggleAudioOptions() {
+            document.getElementById('audioOptions').classList.toggle('show');
+        }
+
+        function hideAudioOptions() {
+            document.getElementById('audioOptions').classList.remove('show');
+        }
+
+        document.addEventListener('click', function(event) {
+            const options = document.getElementById('audioOptions');
+            const micBtn = document.getElementById('micBtn');
+            const modal = document.getElementById('customizationModal');
+            
+            if (!options.contains(event.target) && !micBtn.contains(event.target)) {
+                hideAudioOptions();
+            }
+            
+            if (event.target === modal) {
+                closeCustomization();
+            }
+        });
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    recordingSeconds = 0;
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        processAudio(audioBlob);
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                    
+                    document.getElementById('inputControls').classList.add('hidden');
+                    document.getElementById('recordingUI').classList.remove('hidden');
+
+                    recordingInterval = setInterval(() => {
+                        recordingSeconds++;
+                        const mins = Math.floor(recordingSeconds / 60);
+                        const secs = recordingSeconds % 60;
+                        document.getElementById('recordingTime').textContent = 
+                            `${mins}:${secs.toString().padStart(2, '0')}`;
+                    }, 1000);
+                })
+                .catch(err => {
+                    alert('🎤 Please allow microphone access');
+                });
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                clearInterval(recordingInterval);
+                
+                document.getElementById('inputControls').classList.remove('hidden');
+                document.getElementById('recordingUI').classList.add('hidden');
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('audio/')) {
+                console.log('File selected:', file.name, file.type);
+                processAudio(file);
+            } else {
+                alert('Please upload an audio file');
+            }
+            event.target.value = '';
+        }
+
+        function processAudio(audioBlob) {
+            console.log('processAudio called with:', audioBlob);
+            console.log('Using avatar config:', avatarConfig);
+            
+            showProcessing();
+            document.getElementById('micBtn').disabled = true;
+
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.wav');
+            formData.append('gender', avatarConfig.gender);
+            formData.append('hair_style', avatarConfig.hair_style);
+            formData.append('hair_color', avatarConfig.hair_color);
+            formData.append('eye_color', avatarConfig.eye_color);
+
+            console.log('Sending request to backend...');
+
+            fetch('http://localhost:5000/api/process-audio', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response received:', response.status);
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Processing failed');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Backend response:', data);
+                
+                hideProcessing();
+                document.getElementById('micBtn').disabled = false;
+                
+                const videoUrl = data.video_url ? `http://localhost:5000${data.video_url}` : null;
+                
+                addMessage('sent', data.transcription || 'Audio processed successfully', data.emotion || 'neutral', videoUrl, true);
+
+                setTimeout(() => {
+                    const responses = [
+                        'That sounds wonderful! 😊',
+                        'I can hear you perfectly!',
+                        'Thanks for sharing! 🙌',
+                        'Amazing! Tell me more!',
+                        'So cool! 🎉'
+                    ];
+                    const response = responses[Math.floor(Math.random() * responses.length)];
+                    addMessage('received', response, 'joy', null, false);
+                }, 1800);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                hideProcessing();
+                document.getElementById('micBtn').disabled = false;
+                alert('Failed to process audio: ' + error.message);
+            });
+        }
+
+        function showProcessing() {
+            const messagesArea = document.getElementById('messagesArea');
+            const processingDiv = document.createElement('div');
+            processingDiv.className = 'processing';
+            processingDiv.id = 'processingIndicator';
+            processingDiv.innerHTML = `
+                <div class="processing-bubble">
+                    <div class="dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                    <span>Analyzing...</span>
+                </div>
+            `;
+            messagesArea.appendChild(processingDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function hideProcessing() {
+            const indicator = document.getElementById('processingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        function addMessage(type, text, emotion, videoUrl, hasVideo) {
+            console.log('addMessage called:', { type, text, emotion, videoUrl, hasVideo });
+            
+            const messagesArea = document.getElementById('messagesArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            let content = '';
+            
+            if (videoUrl) {
+                console.log('Adding video to message:', videoUrl);
+                content = `
+                    <div class="video-container">
+                        <video controls preload="metadata">
+                            <source src="${videoUrl}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                `;
+            } else {
+                content = `<div class="message-text">${text}</div>`;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar"></div>
+                <div class="message-content">
+                    <div class="bubble">
+                        ${content}
+                    </div>
+                    <div class="timestamp">${time}</div>
+                </div>
+            `;
+            
+            messagesArea.appendChild(messageDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+            messageCounter++;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmotiVoice Avatar - Interactive Demos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* BASE & THEME VARIABLES */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        :root {
+            /* Light Mode Defaults */
+            --bg-body: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            --bg-container: white;
+            --text-color: #333;
+            --text-dark: #1a1d29;
+            --text-gray: #6c757d;
+            --border-color: #e9ecef;
+            --bg-light: #f8f9fa;
+            --bg-mode-selector: var(--border-color);
+            --bg-mode-active: white;
+            --bg-toggle-hover: #dfe3e8;
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --success: #4bb543;
+            --danger: #dc3545;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --video-bg: #000;
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            /* Dark Mode Overrides */
+            --bg-body: linear-gradient(135deg, #0e111a 0%, #171c26 100%);
+            --bg-container: #1e2330;
+            --text-color: #f1f1f1;
+            --text-dark: #f1f1f1;
+            --text-gray: #a0a8b5;
+            --border-color: #2e3544;
+            --bg-light: #252b38;
+            --bg-mode-selector: #2e3544;
+            --bg-mode-active: #1e2330;
+            --bg-toggle-hover: #3a404f;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --video-bg: #111;
+        }
+
+        body {
+            background: var(--bg-body);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* LAYOUT */
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1400px;
+            height: 90vh;
+            background: var(--bg-container);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        /* LEFT PANEL (GENERATOR) */
+        .generator-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .panel-header {
+            padding: 24px 30px;
+            background: var(--bg-container);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-header p {
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+        
+        .mode-switch {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .mode-switch:hover { background: var(--bg-toggle-hover); }
+        .mode-switch i { color: var(--text-gray); }
+        .dark-mode .mode-switch i { color: #ffcc00; }
+
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .section { margin-bottom: 30px; }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title i { color: var(--primary); }
+
+        /* AVATAR PREVIEW - Inline with customization */
+        .avatar-customization-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 200px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .avatar-preview-inline {
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 20px;
+        }
+
+        .avatar-preview-container {
+            width: 100%;
+            aspect-ratio: 1;
+            margin: 0 auto 12px;
+            border-radius: var(--border-radius);
+            background: var(--video-bg);
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        .avatar-preview-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-label {
+            font-size: 12px;
+            color: var(--text-gray);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .preview-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 64px;
+        }
+
+        /* INPUTS & CONTROLS */
+        .mode-selector {
+            display: flex;
+            background: var(--bg-mode-selector);
+            border-radius: var(--border-radius);
+            padding: 5px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1; padding: 12px; border: none; border-radius: 8px; background: transparent;
+            font-weight: 600; color: var(--text-gray); cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px;
+        }
+
+        .mode-btn.active {
+            background: var(--bg-mode-active);
+            color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-section { display: none; }
+        .input-section.active { display: block; }
+        
+        .input-group { margin-bottom: 20px; }
+        .input-group label {
+            display: flex; font-weight: 600; font-size: 14px; margin-bottom: 8px; 
+            color: var(--text-dark); align-items: center; gap: 8px;
+        }
+
+        .input-group textarea,
+        .input-group select {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border-color);
+            border-radius: var(--border-radius); font-size: 13px; transition: var(--transition);
+            font-family: inherit; background: var(--bg-container); color: var(--text-color);
+        }
+        .input-group textarea { min-height: 120px; resize: vertical; padding: 14px; }
+
+        .input-group textarea:focus, .input-group select:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+        
+        .avatar-options { display: flex; flex-direction: column; gap: 12px; }
+
+        /* Result Video Positioning */
+        .result-container { margin: 20px 0; display: none; }
+        .result-container.show { display: block; }
+
+        .file-upload-area {
+            border: 2px dashed var(--border-color); border-radius: var(--border-radius);
+            padding: 40px 20px; text-align: center; cursor: pointer; transition: var(--transition);
+            margin-bottom: 15px;
+        }
+        .file-upload-area:hover { border-color: var(--primary); background: rgba(67, 97, 238, 0.03); }
+        .file-upload-area i { font-size: 48px; color: var(--primary); margin-bottom: 15px; }
+        .file-upload-area p { color: var(--text-gray); margin-bottom: 10px; }
+        .file-upload-area .file-types { font-size: 12px; color: var(--text-gray); }
+        #file-info { font-size: 14px; color: var(--text-gray); margin-top: 10px; }
+
+        /* COLLAPSIBLES */
+        .collapsible-section { margin-bottom: 20px; }
+        .section-toggle {
+            width: 100%; padding: 15px; background: var(--bg-mode-selector); border: none;
+            border-radius: var(--border-radius); font-weight: 600; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            color: var(--text-dark); font-size: 14px; transition: var(--transition);
+        }
+        .section-toggle:hover { background: var(--bg-toggle-hover); }
+        .section-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+        .section-content.open { max-height: 1000px; padding-top: 15px; }
+        .arrow { transition: transform 0.3s; }
+        .arrow.rotate { transform: rotate(180deg); }
+
+        /* ACTION & STATUS */
+        .action-btn {
+            width: 100%; padding: 16px; background: var(--primary); color: white; border: none;
+            border-radius: var(--border-radius); font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: var(--transition); display: flex;
+            align-items: center; justify-content: center; gap: 10px; margin-top: 10px;
+        }
+        .action-btn:hover:not(:disabled) {
+            background: var(--primary-dark); transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        .action-btn:disabled { 
+            background: var(--text-gray); cursor: not-allowed; opacity: 1; transform: none; box-shadow: none; 
+        }
+
+        .status-container { margin-top: 20px; }
+        .status { padding: 15px; border-radius: var(--border-radius); font-size: 14px; display: none; }
+        .status.info { background: rgba(67, 97, 238, 0.1); color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .status.success { background: rgba(75, 181, 67, 0.1); color: var(--success); display: flex; align-items: center; gap: 10px; }
+        .status.error { background: rgba(220, 53, 69, 0.1); color: var(--danger); display: flex; align-items: center; gap: 10px; }
+
+        .spinner {
+            width: 24px; height: 24px; border: 3px solid rgba(67, 97, 238, 0.3); border-radius: 50%;
+            border-top-color: var(--primary); animation: spin 1s linear infinite;
+            margin: 20px auto; display: none;
+        }
+        .spinner.show { display: block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .result-container { margin-top: 20px; display: none; }
+        .result-container.show { display: block; }
+        .result-video { 
+            width: 100%; border-radius: var(--border-radius); background: var(--video-bg); 
+            margin-top: 10px; 
+        }
+        
+        .emotion-badge {
+            display: inline-flex; align-items: center; gap: 6px; padding: 8px 15px; color: white;
+            border-radius: 20px; font-size: 13px; font-weight: 600; margin-top: 15px;
+        }
+
+        /* RIGHT PANEL (DEMOS) */
+        .demo-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-container);
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .demo-header {
+            padding: 24px 30px;
+            background: var(--bg-container);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .demo-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .demo-header p {
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        .demo-tabs {
+            display: flex;
+            background: var(--bg-container);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .demo-tab {
+            flex: 1; padding: 18px; border: none; background: transparent; font-weight: 600;
+            color: var(--text-gray); cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            border-bottom: 3px solid transparent; font-size: 14px;
+        }
+        .demo-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .demo-tab:hover { color: var(--primary); }
+
+        .demo-content { flex: 1; position: relative; overflow: hidden; }
+        .demo-frame { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; 
+            display: none; background: var(--bg-light);
+        }
+        .demo-frame.active { display: block; }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .container { flex-direction: column; height: auto; }
+            .generator-panel { border-right: none; border-bottom: 1px solid var(--border-color); }
+            .demo-panel { min-height: 500px; }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="container">
+        <div class="generator-panel">
+            <div class="panel-header">
+                <div class="header-title-group">
+                    <h1><i class="fas fa-robot"></i> EmotiVoice Avatar</h1>
+                    <p>Create expressive avatar videos with AI-powered technology</p>
+                </div>
+                <button class="mode-switch" id="modeSwitch" onclick="toggleDarkMode()">
+                    <i class="fas fa-moon"></i> <span>Dark Mode</span>
+                </button>
+            </div>
+
+            <div class="panel-content">
+                <div class="section">
+                    <div class="mode-selector">
+                        <button class="mode-btn active" onclick="switchMode('audio')">
+                            <i class="fas fa-microphone"></i> Audio Input
+                        </button>
+                        <button class="mode-btn" onclick="switchMode('text')">
+                            <i class="fas fa-keyboard"></i> Text Input
+                        </button>
+                    </div>
+                </div>
+
+                <div id="audio-section" class="input-section active">
+                    <div class="input-group">
+                        <label for="audioFile"><i class="fas fa-file-audio"></i> Upload Audio File</label>
+                        <div class="file-upload-area" onclick="document.getElementById('audioFile').click()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload or drag and drop</p>
+                            <div class="file-types">MP3, WAV, OGG (Max 50MB)</div>
+                        </div>
+                        <input type="file" id="audioFile" accept="audio/*" style="display: none;" onchange="handleFileSelect(this)">
+                        <div id="file-info"></div>
+                    </div>
+                </div>
+
+                <div id="text-section" class="input-section">
+                    <div class="input-group">
+                        <label for="textInput"><i class="fas fa-comment-dots"></i> Your Message</label>
+                        <textarea id="textInput" placeholder="Type the text you want to convert to speech..."></textarea>
+                    </div>
+
+                    <div class="collapsible-section">
+                        <button class="section-toggle" onclick="toggleSection(this)">
+                            <span><i class="fas fa-cog"></i> Text-to-Speech Options</span>
+                            <span class="arrow">▼</span>
+                        </button>
+                        <div class="section-content">
+                            <div class="input-group">
+                                <label for="ttsEngine">TTS Engine</label>
+                                <select id="ttsEngine">
+                                    <option value="auto">Auto (Best Available)</option>
+                                    <option value="edge">Edge-TTS (High Quality)</option>
+                                    <option value="gtts">Google TTS (Simple)</option>
+                                    <option value="pyttsx3">Pyttsx3 (Offline)</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="ttsVoice">Voice Selection</label>
+                                <select id="ttsVoice">
+                                    <option value="en-US-AriaNeural">🇺🇸 Aria (Female)</option>
+                                    <option value="en-US-GuyNeural">🇺🇸 Guy (Male)</option>
+                                    <option value="en-GB-SoniaNeural">🇬🇧 Sonia (Female)</option>
+                                    <option value="en-GB-RyanNeural">🇬🇧 Ryan (Male)</option>
+                                    <option value="tr-TR-EmelNeural">🇹🇷 Emel (Female)</option>
+                                    <option value="tr-TR-AhmetNeural">🇹🇷 Ahmet (Male)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result Video - Moved here between input and customization -->
+                <div class="result-container" id="videoResult">
+                    <div class="section-title">
+                        <i class="fas fa-film"></i> Generated Video
+                    </div>
+                    <div id="emotionBadge"></div>
+                    <video class="result-video" id="resultVideo" controls></video>
+                </div>
+                
+                <div class="collapsible-section">
+                    <button class="section-toggle" onclick="toggleSection(this)">
+                        <span><i class="fas fa-user-cog"></i> Avatar Customization</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="section-content open">
+                        <div class="avatar-customization-wrapper">
+                            <div class="avatar-options">
+                                <div class="input-group">
+                                    <label for="gender">Gender</label>
+                                    <select id="gender" onchange="updateAvatarPreview()">
+                                        <option value="female">Female</option>
+                                        <option value="male">Male</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="hairStyle">Hair Style</label>
+                                    <select id="hairStyle" onchange="updateAvatarPreview()">
+                                        <option value="wavy">Wavy</option>
+                                        <option value="straight">Straight</option>
+                                        <option value="curly">Curly</option>
+                                        <option value="short">Short</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="hairColor">Hair Color</label>
+                                    <select id="hairColor" onchange="updateAvatarPreview()">
+                                        <option value="brown">Brown</option>
+                                        <option value="black">Black</option>
+                                        <option value="blonde">Blonde</option>
+                                        <option value="red">Red</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="eyeColor">Eye Color</label>
+                                    <select id="eyeColor" onchange="updateAvatarPreview()">
+                                        <option value="brown">Brown</option>
+                                        <option value="blue">Blue</option>
+                                        <option value="green">Green</option>
+                                        <option value="hazel">Hazel</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="bgColor">Background</label>
+                                    <select id="bgColor" onchange="updateAvatarPreview()">
+                                        <option value="pink">Pink</option>
+                                        <option value="blue">Blue</option>
+                                        <option value="green">Green</option>
+                                        <option value="purple">Purple</option>
+                                        <option value="white">White</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="avatar-preview-inline">
+                                <div class="avatar-preview-container">
+                                    <canvas id="avatarPreviewCanvas" class="avatar-preview-canvas" width="360" height="360"></canvas>
+                                </div>
+                                <div class="preview-label">
+                                    <i class="fas fa-eye"></i> Live Preview
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="action-btn" onclick="processInput()">
+                    <i class="fas fa-play-circle"></i> Generate Avatar Video
+                </button>
+                
+                <div class="spinner" id="spinner"></div>
+                <div class="status-container">
+                    <div class="status" id="status"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-panel">
+            <div class="demo-header">
+                <h2>Use Case Demos</h2>
+                <p>Explore how EmotiVoice Avatar can be integrated into different applications</p>
+            </div>
+
+            <div class="demo-tabs">
+                <button class="demo-tab active" onclick="switchDemo('messaging')">
+                    <i class="fas fa-comments"></i> Messaging
+                </button>
+                <button class="demo-tab" onclick="switchDemo('story')">
+                    <i class="fas fa-book-open"></i> Story Creator
+                </button>
+                <button class="demo-tab" onclick="switchDemo('meet')">
+                    <i class="fas fa-video"></i> Customer Service
+                </button>
+            </div>
+
+            <div class="demo-content">
+                <iframe id="messagingDemo" class="demo-frame active" src="messaging.html"></iframe>
+                <iframe id="storyDemo" class="demo-frame" src="story-creator.html"></iframe>
+                <iframe id="meetDemo" class="demo-frame" src="customer-service.html"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'audio'; // Changed default to audio
+
+        // --- AVATAR PREVIEW ---
+        async function updateAvatarPreview() {
+            const canvas = document.getElementById('avatarPreviewCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Get current settings
+            const gender = document.getElementById('gender').value;
+            const hairStyle = document.getElementById('hairStyle').value;
+            const hairColor = document.getElementById('hairColor').value;
+            const eyeColor = document.getElementById('eyeColor').value;
+            const bgColor = document.getElementById('bgColor').value;
+            
+            try {
+                const loadImage = (src) => {
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => resolve(img);
+                        img.onerror = () => resolve(null);
+                        img.src = src;
+                    });
+                };
+                
+                // Background color
+                const bgColors = {
+                    'pink': '#fce7f3',
+                    'blue': '#dbeafe',
+                    'green': '#d1fae5',
+                    'purple': '#e9d5ff',
+                    'white': '#ffffff'
+                };
+                ctx.fillStyle = bgColors[bgColor] || '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+                
+                // Build paths
+                let hairPath;
+                if (hairStyle === 'shaved') {
+                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/shaved.png`;
+                } else {
+                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/${hairColor}.png`;
+                }
+                
+                const eyesPath = `/assets/avatar/${gender}/eyes/neutral/${eyeColor}.png`;
+                const mouthPath = `/assets/avatar/${gender}/mouthshapes/neutral/REST.png`;
+                
+                // Load and draw
+                const [hairImg, eyesImg, mouthImg] = await Promise.all([
+                    loadImage(hairPath),
+                    loadImage(eyesPath),
+                    loadImage(mouthPath)
+                ]);
+                
+                if (hairImg) ctx.drawImage(hairImg, 0, 0, width, height);
+                if (eyesImg) ctx.drawImage(eyesImg, 0, 0, width, height);
+                if (mouthImg) ctx.drawImage(mouthImg, 0, 0, width, height);
+                
+            } catch (error) {
+                console.error('Avatar preview error:', error);
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Preview unavailable', width / 2, height / 2);
+            }
+        }
+
+        // --- DARK MODE LOGIC ---
+        function applyTheme(isDark) {
+            const body = document.body;
+            const switchBtn = document.getElementById('modeSwitch');
+            const icon = switchBtn.querySelector('i');
+            const text = switchBtn.querySelector('span');
+
+            if (isDark) {
+                body.classList.add('dark-mode');
+                body.classList.remove('light-mode');
+                icon.className = 'fas fa-sun';
+                text.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                body.classList.remove('dark-mode');
+                icon.className = 'fas fa-moon';
+                text.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function toggleDarkMode() {
+            const isLight = document.body.classList.contains('light-mode');
+            applyTheme(isLight);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                applyTheme(true);
+            } else {
+                applyTheme(false);
+            }
+            
+            // Load initial avatar preview
+            updateAvatarPreview();
+        });
+
+        function handleFileSelect(input) {
+            const fileInfo = document.getElementById('file-info');
+            if (input.files.length > 0) {
+                const file = input.files[0];
+                fileInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            } else {
+                fileInfo.innerHTML = '';
+            }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const clickedButton = event.target.closest('.mode-btn');
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
+            
+            document.querySelectorAll('.input-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`${mode}-section`).classList.add('active');
+            
+            const ttsSection = document.getElementById('text-section').querySelector('.collapsible-section');
+            ttsSection.style.display = (mode === 'audio') ? 'none' : 'block';
+
+            hideStatus();
+            hideVideo();
+        }
+
+        function switchDemo(demoName) {
+            document.querySelectorAll('.demo-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            const clickedTab = event.target.closest('.demo-tab');
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+            
+            document.querySelectorAll('.demo-frame').forEach(frame => {
+                frame.classList.remove('active');
+            });
+            document.getElementById(`${demoName}Demo`).classList.add('active');
+        }
+
+        function toggleSection(button) {
+            const content = button.nextElementSibling;
+            const arrow = button.querySelector('.arrow');
+            
+            content.classList.toggle('open');
+            arrow.classList.toggle('rotate');
+        }
+
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`; 
+
+            let icon = '';
+            if (type === 'info') icon = '<i class="fas fa-info-circle"></i>';
+            if (type === 'success') icon = '<i class="fas fa-check-circle"></i>';
+            if (type === 'error') icon = '<i class="fas fa-exclamation-circle"></i>';
+            
+            status.innerHTML = icon + ' ' + message; 
+        }
+
+        function hideStatus() {
+            document.getElementById('status').className = 'status';
+        }
+
+        function showSpinner() {
+            document.getElementById('spinner').classList.add('show');
+        }
+
+        function hideSpinner() {
+            document.getElementById('spinner').classList.remove('show');
+        }
+
+        function showVideo(videoUrl, emotion) {
+            const resultDiv = document.getElementById('videoResult');
+            const video = document.getElementById('resultVideo');
+            const badge = document.getElementById('emotionBadge');
+            
+            video.src = videoUrl;
+            
+            const emotionColors = {
+                joy: '#4bb543',
+                anger: '#dc3545',
+                sadness: '#4361ee',
+                fear: '#7209b7',
+                surprise: '#ffcc00',
+                disgust: '#795548',
+                neutral: '#6c757d'
+            };
+            
+            const color = emotionColors[emotion] || '#6c757d';
+            badge.innerHTML = `<span class="emotion-badge" style="background: ${color};">
+                <i class="fas fa-smile"></i> Emotion: ${emotion.charAt(0).toUpperCase() + emotion.slice(1)}
+            </span>`;
+            
+            resultDiv.classList.add('show');
+        }
+
+        function hideVideo() {
+            document.getElementById('videoResult').classList.remove('show');
+        }
+
+        async function processInput() {
+            hideStatus();
+            hideVideo();
+            showSpinner();
+            
+            const processBtn = document.querySelector('.action-btn');
+            processBtn.disabled = true;
+            
+            try {
+                let response;
+                
+                if (currentMode === 'audio') {
+                    const fileInput = document.getElementById('audioFile');
+                    if (!fileInput.files.length) {
+                        throw new Error('Please select an audio file');
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('audio', fileInput.files[0]);
+                    formData.append('gender', document.getElementById('gender').value);
+                    formData.append('hair_style', document.getElementById('hairStyle').value);
+                    formData.append('hair_color', document.getElementById('hairColor').value);
+                    formData.append('eye_color', document.getElementById('eyeColor').value);
+                    formData.append('background_color', document.getElementById('bgColor').value);
+                    
+                    showStatus('Uploading audio and processing...', 'info');
+                    
+                    response = await fetch('/api/process-audio', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    const text = document.getElementById('textInput').value.trim();
+                    if (!text) {
+                        throw new Error('Please enter some text');
+                    }
+                    
+                    const payload = {
+                        text: text,
+                        tts_engine: document.getElementById('ttsEngine').value,
+                        tts_voice: document.getElementById('ttsVoice').value,
+                        gender: document.getElementById('gender').value,
+                        hair_style: document.getElementById('hairStyle').value,
+                        hair_color: document.getElementById('hairColor').value,
+                        eye_color: document.getElementById('eyeColor').value,
+                        background_color: document.getElementById('bgColor').value
+                    };
+                    
+                    showStatus('Generating speech and processing...', 'info');
+                    
+                    response = await fetch('/api/process-text', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                }
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Processing failed');
+                }
+                
+                hideSpinner();
+                showStatus('Video generated successfully!', 'success');
+                showVideo(data.video_url, data.emotion);
+                
+            } catch (error) {
+                hideSpinner();
+                showStatus('Error: ' + error.message, 'error');
+            } finally {
+                processBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

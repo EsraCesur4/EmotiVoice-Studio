@@ -1,0 +1,22 @@
+numpy>=1.26,<2
+torch==2.4.0
+librosa==0.10.2.post1
+soundfile==0.12.1
+pillow>=10.3.0
+moviepy==1.0.3
+phonemizer==3.3.0
+openai-whisper==20240930
+tqdm>=4.66
+transformers>=4.41,<5
+huggingface_hub>=0.23
+g2p_en>=2.1.0
+imageio-ffmpeg>=0.4.9
+
+# Flask API
+flask==3.0.0
+flask-cors==4.0.0
+
+scikit-image>=0.21.0
+opencv-python>=4.8.0
+
+edge-tts

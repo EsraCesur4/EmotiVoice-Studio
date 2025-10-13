@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Service Agent Panel - EmotiVoice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e4e6eb 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 85vh;
+            background: white;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .customer-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .customer-info {
+            flex: 1;
+        }
+
+        .customer-name {
+            font-weight: 600;
+            color: #111827;
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        .customer-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .agent-mode-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .settings-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #f3f4f6;
+            color: #6b7280;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .avatar-preview-section {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .avatar-preview-container {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            background: #000;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .avatar-preview-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            color: white;
+        }
+
+        .preview-loading {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .preview-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .close-modal-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f3f4f6;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-modal-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 12px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .option-group {
+            margin-bottom: 20px;
+        }
+
+        .option-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .option-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .option-btn {
+            padding: 10px 18px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            background: #f9fafb;
+            color: #6b7280;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-transform: capitalize;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover {
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        .option-btn.selected {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-color: #10b981;
+            color: white;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #374151;
+            background: #f9fafb;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #10b981;
+            background: white;
+        }
+
+        .save-settings-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 8px;
+        }
+
+        .save-settings-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: #f9fafb;
+        }
+
+        .messages-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.customer {
+            flex-direction: row;
+        }
+
+        .message.agent {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .message.customer .message-avatar {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+        }
+
+        .message.agent .message-avatar {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .message-content {
+            max-width: 65%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.agent .message-content {
+            align-items: flex-end;
+        }
+
+        .agent-message-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            flex-direction: row-reverse;
+        }
+
+        .bubble {
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            min-width: 120px;
+        }
+
+        .message.customer .bubble {
+            background: white;
+            color: #1f2937;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.agent .bubble {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-text {
+            padding: 14px 18px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        /* Avatar Video Container */
+        .avatar-video-container {
+            width: 140px;
+            height: 140px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            flex-shrink: 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .avatar-video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 6px;
+            padding: 0 4px;
+        }
+
+        .processing-indicator {
+            display: none;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .processing-indicator.show {
+            display: flex;
+        }
+
+        .processing-bubble {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 16px;
+            border-bottom-right-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            font-size: 14px;
+        }
+
+        .dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: bounce 0.6s infinite;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .input-area {
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            padding: 20px 24px;
+        }
+
+        .quick-responses {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .quick-responses::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .quick-responses::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .quick-responses::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        .quick-response-btn {
+            padding: 10px 16px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #374151;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-response-btn:hover {
+            background: #f9fafb;
+            border-color: #10b981;
+            color: #10b981;
+            transform: translateY(-1px);
+        }
+
+        .quick-response-btn:active {
+            transform: translateY(0);
+        }
+
+        .quick-responses-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 24px;
+            padding: 8px 8px 8px 20px;
+            transition: all 0.3s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #10b981;
+            background: white;
+        }
+
+        .message-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            max-height: 150px;
+            min-height: 24px;
+            padding: 8px 0;
+            color: #1f2937;
+        }
+
+        .message-input:focus {
+            outline: none;
+        }
+
+        .message-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .emotion-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .emotion-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .agent-info-banner {
+            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+            border-bottom: 1px solid #bfdbfe;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #1e40af;
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Agent Info Banner -->
+        <div class="agent-info-banner">
+            <svg fill="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+            </svg>
+            Agent Mode - Your responses generate avatar videos with emotion detection
+        </div>
+
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="customer-avatar">JD</div>
+            <div class="customer-info">
+                <div class="customer-name">John Doe</div>
+                <div class="customer-meta">
+                    <span>Customer #12847</span>
+                    <span>•</span>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>Active now</span>
+                    </div>
+                </div>
+            </div>
+            <div class="agent-mode-badge">
+                <svg fill="currentColor" viewBox="0 0 24 24" width="14" height="14">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                You're the Agent
+            </div>
+            <button class="settings-btn" onclick="openSettings()" title="Avatar & TTS Settings">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="messages-area" id="messagesArea">
+            <div class="message customer">
+                <div class="message-avatar">JD</div>
+                <div class="message-content">
+                    <div class="bubble">
+                        <div class="message-text">Hi, I have a problem with my recent order. It hasn't arrived yet and it's been 5 days.</div>
+                    </div>
+                    <div class="timestamp">2:15 PM</div>
+                </div>
+            </div>
+
+            <div class="message customer">
+                <div class="message-avatar">JD</div>
+                <div class="message-content">
+                    <div class="bubble">
+                        <div class="message-text">Can you help me track it?</div>
+                    </div>
+                    <div class="timestamp">2:15 PM</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processing Indicator -->
+        <div class="processing-indicator" id="processingIndicator">
+            <div class="processing-bubble">
+                <div class="dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <span>Generating avatar response...</span>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <!-- Quick Response Suggestions -->
+            <div class="quick-responses-label">💡 Quick Responses</div>
+            <div class="quick-responses">
+                <button class="quick-response-btn" onclick="useQuickResponse('I apologize for the inconvenience. Let me check your order status right away.')">
+                    😔 Apology + Check Order
+                </button>
+                <button class="quick-response-btn" onclick="useQuickResponse('I understand your concern. I\'ll be happy to help you resolve this issue immediately.')">
+                    🤝 Understanding + Help
+                </button>
+                <button class="quick-response-btn" onclick="useQuickResponse('Great news! I found your order. It\'s currently in transit and should arrive within 2 business days.')">
+                    ✅ Good News + Update
+                </button>
+                <button class="quick-response-btn" onclick="useQuickResponse('I\'m so sorry to hear that. Let me process a refund for you right away.')">
+                    💰 Refund Process
+                </button>
+                <button class="quick-response-btn" onclick="useQuickResponse('Thank you for your patience! I\'ve sent the tracking information to your email.')">
+                    📧 Tracking Sent
+                </button>
+                <button class="quick-response-btn" onclick="useQuickResponse('Is there anything else I can help you with today?')">
+                    ❓ Follow-up Question
+                </button>
+            </div>
+
+            <div class="input-wrapper">
+                <textarea 
+                    class="message-input" 
+                    id="messageInput" 
+                    placeholder="Type your response to the customer..."
+                    rows="1"
+                    onkeypress="handleEnter(event)"
+                    oninput="autoResize(this)"
+                ></textarea>
+                <button class="send-btn" id="sendBtn" onclick="sendAgentResponse()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">⚙️ Avatar & TTS Settings</div>
+                <button class="close-modal-btn" onclick="closeSettings()">✕</button>
+            </div>
+
+            <!-- Avatar Preview -->
+            <div class="avatar-preview-section">
+                <div class="avatar-preview-container">
+                    <canvas id="avatarPreviewCanvas" class="avatar-preview-canvas" width="400" height="400"></canvas>
+                </div>
+                <div style="font-size: 13px; color: #6b7280; font-weight: 500;">Live Preview</div>
+            </div>
+
+            <!-- TTS Settings Section -->
+            <div class="settings-section">
+                <span class="section-title">🎤 Text-to-Speech</span>
+
+                <div class="option-group">
+                    <label class="option-label">TTS Engine</label>
+                    <select class="form-select" id="ttsEngine">
+                        <option value="auto">Auto (Best Available)</option>
+                        <option value="edge" selected>Edge-TTS (High Quality)</option>
+                        <option value="gtts">Google TTS (Simple)</option>
+                        <option value="pyttsx3">Pyttsx3 (Offline)</option>
+                    </select>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label">Voice Selection</label>
+                    <select class="form-select" id="ttsVoice">
+                        <option value="en-US-AriaNeural">🇺🇸 Aria (Female, Friendly)</option>
+                        <option value="en-US-GuyNeural">🇺🇸 Guy (Male, Professional)</option>
+                        <option value="en-GB-SoniaNeural">🇬🇧 Sonia (Female, British)</option>
+                        <option value="en-GB-RyanNeural">🇬🇧 Ryan (Male, British)</option>
+                        <option value="en-US-JennyNeural">🇺🇸 Jenny (Female, Warm)</option>
+                        <option value="en-US-EricNeural">🇺🇸 Eric (Male, Calm)</option>
+                        <option value="tr-TR-EmelNeural">🇹🇷 Emel (Female, Turkish)</option>
+                        <option value="tr-TR-AhmetNeural">🇹🇷 Ahmet (Male, Turkish)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Avatar Settings Section -->
+            <div class="settings-section">
+                <span class="section-title">🎨 Avatar Customization</span>
+
+                <div class="option-group">
+                    <label class="option-label">Gender</label>
+                    <div class="option-buttons">
+                        <button class="option-btn selected" data-value="female" onclick="selectOption('gender', 'female', this)">Female</button>
+                        <button class="option-btn" data-value="male" onclick="selectOption('gender', 'male', this)">Male</button>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label">Hair Style</label>
+                    <div class="option-buttons" id="hairStyleOptions">
+                        <button class="option-btn" onclick="selectOption('hair_style', 'curly', this)">Curly</button>
+                        <button class="option-btn" onclick="selectOption('hair_style', 'short', this)">Short</button>
+                        <button class="option-btn" onclick="selectOption('hair_style', 'straight', this)">Straight</button>
+                        <button class="option-btn selected" onclick="selectOption('hair_style', 'wavy', this)">Wavy</button>
+                    </div>
+                </div>
+
+                <div class="option-group" id="hairColorGroup">
+                    <label class="option-label">Hair Color</label>
+                    <div class="option-buttons">
+                        <button class="option-btn" onclick="selectOption('hair_color', 'black', this)">Black</button>
+                        <button class="option-btn" onclick="selectOption('hair_color', 'blonde', this)">Blonde</button>
+                        <button class="option-btn" onclick="selectOption('hair_color', 'blue', this)">Blue</button>
+                        <button class="option-btn selected" onclick="selectOption('hair_color', 'brown', this)">Brown</button>
+                        <button class="option-btn" onclick="selectOption('hair_color', 'red', this)">Red</button>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label">Eye Color</label>
+                    <div class="option-buttons">
+                        <button class="option-btn" onclick="selectOption('eye_color', 'black', this)">Black</button>
+                        <button class="option-btn" onclick="selectOption('eye_color', 'blue', this)">Blue</button>
+                        <button class="option-btn selected" onclick="selectOption('eye_color', 'brown', this)">Brown</button>
+                        <button class="option-btn" onclick="selectOption('eye_color', 'green', this)">Green</button>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label">Background Color</label>
+                    <div class="option-buttons">
+                        <button class="option-btn" onclick="selectOption('background_color', 'pink', this)">Pink</button>
+                        <button class="option-btn" onclick="selectOption('background_color', 'blue', this)">Blue</button>
+                        <button class="option-btn" onclick="selectOption('background_color', 'green', this)">Green</button>
+                        <button class="option-btn" onclick="selectOption('background_color', 'purple', this)">Purple</button>
+                        <button class="option-btn selected" onclick="selectOption('background_color', 'white', this)">White</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="save-settings-btn" onclick="saveSettings()">
+                ✓ Save Settings
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let isProcessing = false;
+
+        // Avatar configuration
+        const avatarConfig = {
+            gender: 'female',
+            hair_style: 'wavy',
+            hair_color: 'brown',
+            eye_color: 'brown',
+            background_color: 'white'
+        };
+
+        // TTS configuration
+        const ttsConfig = {
+            engine: 'edge',
+            voice: 'en-US-AriaNeural'
+        };
+
+        const hairStyles = {
+            male: ['curly', 'shaved', 'straight'],
+            female: ['curly', 'short', 'straight', 'wavy']
+        };
+
+        function openSettings() {
+            // Update modal with current settings
+            document.getElementById('ttsEngine').value = ttsConfig.engine;
+            document.getElementById('ttsVoice').value = ttsConfig.voice;
+            document.getElementById('settingsModal').classList.add('show');
+            
+            // Update avatar preview
+            updateAvatarPreview();
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('show');
+        }
+
+        async function updateAvatarPreview() {
+            const canvas = document.getElementById('avatarPreviewCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Build avatar preview paths
+            const gender = avatarConfig.gender;
+            const hairStyle = avatarConfig.hair_style;
+            const hairColor = avatarConfig.hair_color;
+            const eyeColor = avatarConfig.eye_color;
+            const bgColor = avatarConfig.background_color;
+            
+            try {
+                // Load images
+                const loadImage = (src) => {
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => resolve(img);
+                        img.onerror = () => {
+                            console.error('Failed to load:', src);
+                            resolve(null);
+                        };
+                        img.src = src;
+                    });
+                };
+                
+                // Background color fill
+                const bgColors = {
+                    'pink': '#fce7f3',
+                    'blue': '#dbeafe',
+                    'green': '#d1fae5',
+                    'purple': '#e9d5ff',
+                    'white': '#ffffff'
+                };
+                ctx.fillStyle = bgColors[bgColor] || '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+                
+                // Build image paths
+                let hairPath;
+                if (hairStyle === 'shaved') {
+                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/shaved.png`;
+                } else {
+                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/${hairColor}.png`;
+                }
+                
+                const eyesPath = `/assets/avatar/${gender}/eyes/neutral/${eyeColor}.png`;
+                const mouthPath = `/assets/avatar/${gender}/mouthshapes/neutral/REST.png`;
+                
+                // Load all images
+                const [hairImg, eyesImg, mouthImg] = await Promise.all([
+                    loadImage(hairPath),
+                    loadImage(eyesPath),
+                    loadImage(mouthPath)
+                ]);
+                
+                // Draw layers in order
+                if (hairImg) ctx.drawImage(hairImg, 0, 0, width, height);
+                if (eyesImg) ctx.drawImage(eyesImg, 0, 0, width, height);
+                if (mouthImg) ctx.drawImage(mouthImg, 0, 0, width, height);
+                
+            } catch (error) {
+                console.error('Error loading avatar preview:', error);
+                // Show error message
+                ctx.fillStyle = '#6b7280';
+                ctx.font = '16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Preview unavailable', width / 2, height / 2);
+            }
+        }
+
+        function selectOption(category, value, button) {
+            const siblings = button.parentElement.querySelectorAll('.option-btn');
+            siblings.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            avatarConfig[category] = value;
+            
+            if (category === 'gender') {
+                updateHairStyleOptions(value);
+            }
+            
+            if (category === 'hair_style' && value === 'shaved') {
+                document.getElementById('hairColorGroup').style.display = 'none';
+            } else if (category === 'gender' || category === 'hair_style') {
+                document.getElementById('hairColorGroup').style.display = 'block';
+            }
+            
+            // Update preview whenever option changes
+            updateAvatarPreview();
+        }
+
+        function updateHairStyleOptions(gender) {
+            const container = document.getElementById('hairStyleOptions');
+            container.innerHTML = '';
+            const styles = hairStyles[gender];
+            styles.forEach((style, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn' + (style === avatarConfig.hair_style ? ' selected' : '');
+                btn.textContent = style.charAt(0).toUpperCase() + style.slice(1);
+                btn.onclick = function() { selectOption('hair_style', style, this); };
+                container.appendChild(btn);
+            });
+            
+            // Update avatar config to a valid style for the gender
+            if (!styles.includes(avatarConfig.hair_style)) {
+                avatarConfig.hair_style = styles[styles.length - 1];
+            }
+            
+            // Update preview after changing gender
+            updateAvatarPreview();
+        }
+
+        function saveSettings() {
+            // Save TTS settings
+            ttsConfig.engine = document.getElementById('ttsEngine').value;
+            ttsConfig.voice = document.getElementById('ttsVoice').value;
+            
+            closeSettings();
+            
+            // Show confirmation
+            const messagesArea = document.getElementById('messagesArea');
+            const notification = document.createElement('div');
+            notification.style.cssText = 'text-align: center; padding: 12px; background: #d1fae5; color: #065f46; border-radius: 12px; margin-bottom: 16px; font-size: 13px; font-weight: 600;';
+            notification.textContent = '✓ Settings saved! Your next response will use the new avatar and voice.';
+            messagesArea.appendChild(notification);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+            
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', function() {
+            updateHairStyleOptions('female');
+        });
+
+        function handleEnter(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendAgentResponse();
+            }
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+        }
+
+        function useQuickResponse(text) {
+            const input = document.getElementById('messageInput');
+            input.value = text;
+            autoResize(input);
+            input.focus();
+        }
+
+        async function sendAgentResponse() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text || isProcessing) return;
+            
+            isProcessing = true;
+            document.getElementById('sendBtn').disabled = true;
+            
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Show processing indicator
+            showProcessingIndicator();
+            
+            try {
+                // Call your text-to-avatar pipeline
+                const response = await fetch('http://localhost:5000/api/process-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        tts_engine: ttsConfig.engine,
+                        tts_voice: ttsConfig.voice,
+                        ...avatarConfig
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const videoUrl = `http://localhost:5000${data.video_url}`;
+                    
+                    // Hide processing indicator
+                    hideProcessingIndicator();
+                    
+                    // Add agent message with avatar video
+                    addAgentMessage(text, videoUrl, data.emotion);
+                } else {
+                    throw new Error(data.error || 'Processing failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                hideProcessingIndicator();
+                alert('Failed to generate avatar: ' + error.message);
+                
+                // Still show the message without video as fallback
+                addAgentMessage(text, null, 'neutral');
+            } finally {
+                isProcessing = false;
+                document.getElementById('sendBtn').disabled = false;
+            }
+        }
+
+        function showProcessingIndicator() {
+            document.getElementById('processingIndicator').classList.add('show');
+            const messagesArea = document.getElementById('messagesArea');
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function hideProcessingIndicator() {
+            document.getElementById('processingIndicator').classList.remove('show');
+        }
+
+        function addAgentMessage(text, videoUrl, emotion) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message agent';
+            
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const emotionColors = {
+                joy: '#10b981',
+                sadness: '#3b82f6',
+                anger: '#ef4444',
+                surprise: '#f59e0b',
+                fear: '#8b5cf6',
+                disgust: '#f97316',
+                neutral: '#6b7280'
+            };
+            
+            const emotionColor = emotionColors[emotion] || '#6b7280';
+            
+            let videoHTML = '';
+            if (videoUrl) {
+                videoHTML = `
+                    <div class="avatar-video-container">
+                        <video playsinline>
+                            <source src="${videoUrl}" type="video/mp4">
+                        </video>
+                        <div class="emotion-badge">
+                            <div class="emotion-dot" style="background: ${emotionColor};"></div>
+                            <span>${emotion}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                videoHTML = `
+                    <div class="avatar-video-container">
+                        <div class="avatar-placeholder">CS</div>
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">CS</div>
+                <div class="message-content">
+                    <div class="agent-message-wrapper">
+                        ${videoHTML}
+                        <div class="bubble">
+                            <div class="message-text">${text}</div>
+                        </div>
+                    </div>
+                    <div class="timestamp">${time}</div>
+                </div>
+            `;
+            
+            messagesArea.appendChild(messageDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+            
+            // Auto-play the video once it's added to DOM
+            const video = messageDiv.querySelector('video');
+            if (video) {
+                video.play().catch(err => console.log('Video autoplay prevented:', err));
+            }
+        }
+
+        // Simulate customer messages for demo (optional)
+        function simulateCustomerMessage() {
+            const messages = [
+                "Thank you for your help!",
+                "Can you also tell me about the refund policy?",
+                "I appreciate your quick response.",
+                "That's great, when can I expect the delivery?",
+                "Is there a tracking number I can use?"
+            ];
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            const messagesArea = document.getElementById('messagesArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message customer';
+            
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">JD</div>
+                <div class="message-content">
+                    <div class="bubble">
+                        <div class="message-text">${randomMessage}</div>
+                    </div>
+                    <div class="timestamp">${time}</div>
+                </div>
+            `;
+            
+            messagesArea.appendChild(messageDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        // Optional: Auto-simulate customer responses
+        let autoRespond = false;
+        if (autoRespond) {
+            setInterval(() => {
+                if (!isProcessing && Math.random() > 0.7) {
+                    simulateCustomerMessage();
+                }
+            }, 20000);
+        }
+    </script>
+</body>
+</html>

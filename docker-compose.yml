@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  emotivoice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: emotivoice-avatar
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - UPLOAD_FOLDER=/app/backend/uploads
+      - OUTPUT_FOLDER=/app/backend/outputs
+    volumes:
+      - ./backend/uploads:/app/backend/uploads
+      - ./backend/outputs:/app/backend/outputs
+    working_dir: /app/backend
+    command: python app.py
