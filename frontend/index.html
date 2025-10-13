@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EmotiVoice Avatar - Interactive Demos</title>
+    <title>EmotiVoice Studio - Interactive Demos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -90,13 +90,15 @@
             background: var(--bg-container);
             border-bottom: 1px solid var(--border-color);
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
+            position: relative;
         }
 
         .header-title-group {
             display: flex;
             flex-direction: column;
+            align-items: center;
         }
 
         .panel-header h1 {
@@ -112,6 +114,7 @@
         .panel-header p {
             color: var(--text-gray);
             font-size: 14px;
+            text-align: center;
         }
         
         .mode-switch {
@@ -127,6 +130,8 @@
             align-items: center;
             gap: 8px;
             font-weight: 600;
+            position: absolute;
+            right: 30px;
         }
         
         .mode-switch:hover { background: var(--bg-toggle-hover); }
@@ -234,9 +239,13 @@
         .input-section.active { display: block; }
         
         .input-group { margin-bottom: 20px; }
+        .avatar-options .input-group { margin-bottom: 12px; }
         .input-group label {
             display: flex; font-weight: 600; font-size: 14px; margin-bottom: 8px; 
             color: var(--text-dark); align-items: center; gap: 8px;
+        }
+        .avatar-options .input-group label {
+            margin-bottom: 6px;
         }
 
         .input-group textarea,
@@ -251,7 +260,7 @@
             outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
         }
         
-        .avatar-options { display: flex; flex-direction: column; gap: 12px; }
+        .avatar-options { display: flex; flex-direction: column; gap: 8px; }
 
         /* Result Video Positioning */
         .result-container { margin: 20px 0; display: none; }
@@ -337,6 +346,7 @@
             padding: 24px 30px;
             background: var(--bg-container);
             border-bottom: 1px solid var(--border-color);
+            text-align: center;
         }
 
         .demo-header h2 {
@@ -387,7 +397,7 @@
         <div class="generator-panel">
             <div class="panel-header">
                 <div class="header-title-group">
-                    <h1><i class="fas fa-robot"></i> EmotiVoice Avatar</h1>
+                    <h1><i class="fas fa-robot"></i> EmotiVoice Studio</h1>
                     <p>Create expressive avatar videos with AI-powered technology</p>
                 </div>
                 <button class="mode-switch" id="modeSwitch" onclick="toggleDarkMode()">
@@ -428,26 +438,15 @@
 
                     <div class="collapsible-section">
                         <button class="section-toggle" onclick="toggleSection(this)">
-                            <span><i class="fas fa-cog"></i> Text-to-Speech Options</span>
+                            <span><i class="fas fa-cog"></i> Voice Options</span>
                             <span class="arrow">▼</span>
                         </button>
-                        <div class="section-content">
-                            <div class="input-group">
-                                <label for="ttsEngine">TTS Engine</label>
-                                <select id="ttsEngine">
-                                    <option value="auto">Auto (Best Available)</option>
-                                    <option value="edge">Edge-TTS (High Quality)</option>
-                                    <option value="gtts">Google TTS (Simple)</option>
-                                    <option value="pyttsx3">Pyttsx3 (Offline)</option>
-                                </select>
-                            </div>
+                        <div class="section-content open">
                             <div class="input-group">
                                 <label for="ttsVoice">Voice Selection</label>
                                 <select id="ttsVoice">
                                     <option value="en-US-AriaNeural">🇺🇸 Aria (Female)</option>
                                     <option value="en-US-GuyNeural">🇺🇸 Guy (Male)</option>
-                                    <option value="en-GB-SoniaNeural">🇬🇧 Sonia (Female)</option>
-                                    <option value="en-GB-RyanNeural">🇬🇧 Ryan (Male)</option>
                                     <option value="tr-TR-EmelNeural">🇹🇷 Emel (Female)</option>
                                     <option value="tr-TR-AhmetNeural">🇹🇷 Ahmet (Male)</option>
                                 </select>
@@ -501,20 +500,10 @@
                                 <div class="input-group">
                                     <label for="eyeColor">Eye Color</label>
                                     <select id="eyeColor" onchange="updateAvatarPreview()">
-                                        <option value="brown">Brown</option>
                                         <option value="blue">Blue</option>
+                                        <option value="brown">Brown</option>
                                         <option value="green">Green</option>
                                         <option value="hazel">Hazel</option>
-                                    </select>
-                                </div>
-                                <div class="input-group">
-                                    <label for="bgColor">Background</label>
-                                    <select id="bgColor" onchange="updateAvatarPreview()">
-                                        <option value="pink">Pink</option>
-                                        <option value="blue">Blue</option>
-                                        <option value="green">Green</option>
-                                        <option value="purple">Purple</option>
-                                        <option value="white">White</option>
                                     </select>
                                 </div>
                             </div>
@@ -545,7 +534,7 @@
         <div class="demo-panel">
             <div class="demo-header">
                 <h2>Use Case Demos</h2>
-                <p>Explore how EmotiVoice Avatar can be integrated into different applications</p>
+                <p>Explore how EmotiVoice Studio can be integrated into different applications</p>
             </div>
 
             <div class="demo-tabs">
@@ -556,7 +545,7 @@
                     <i class="fas fa-book-open"></i> Story Creator
                 </button>
                 <button class="demo-tab" onclick="switchDemo('meet')">
-                    <i class="fas fa-video"></i> Customer Service
+                    <i class="fas fa-headset"></i> Customer Service
                 </button>
             </div>
 
@@ -569,7 +558,7 @@
     </div>
 
     <script>
-        let currentMode = 'audio'; // Changed default to audio
+        let currentMode = 'audio';
 
         // --- AVATAR PREVIEW ---
         async function updateAvatarPreview() {
@@ -588,7 +577,10 @@
             const hairStyle = document.getElementById('hairStyle').value;
             const hairColor = document.getElementById('hairColor').value;
             const eyeColor = document.getElementById('eyeColor').value;
-            const bgColor = document.getElementById('bgColor').value;
+            
+            // Default background (white)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
             
             try {
                 const loadImage = (src) => {
@@ -600,17 +592,6 @@
                         img.src = src;
                     });
                 };
-                
-                // Background color
-                const bgColors = {
-                    'pink': '#fce7f3',
-                    'blue': '#dbeafe',
-                    'green': '#d1fae5',
-                    'purple': '#e9d5ff',
-                    'white': '#ffffff'
-                };
-                ctx.fillStyle = bgColors[bgColor] || '#ffffff';
-                ctx.fillRect(0, 0, width, height);
                 
                 // Build paths
                 let hairPath;
@@ -814,7 +795,6 @@
                     formData.append('hair_style', document.getElementById('hairStyle').value);
                     formData.append('hair_color', document.getElementById('hairColor').value);
                     formData.append('eye_color', document.getElementById('eyeColor').value);
-                    formData.append('background_color', document.getElementById('bgColor').value);
                     
                     showStatus('Uploading audio and processing...', 'info');
                     
@@ -830,13 +810,12 @@
                     
                     const payload = {
                         text: text,
-                        tts_engine: document.getElementById('ttsEngine').value,
+                        tts_engine: 'edge',
                         tts_voice: document.getElementById('ttsVoice').value,
                         gender: document.getElementById('gender').value,
                         hair_style: document.getElementById('hairStyle').value,
                         hair_color: document.getElementById('hairColor').value,
-                        eye_color: document.getElementById('eyeColor').value,
-                        background_color: document.getElementById('bgColor').value
+                        eye_color: document.getElementById('eyeColor').value
                     };
                     
                     showStatus('Generating speech and processing...', 'info');
