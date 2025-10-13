@@ -74,10 +74,18 @@ import argparse, re, math, json
 from typing import List, Dict
 import numpy as np
 from PIL import Image, Image as PILImage
-from tqdm import tqdm
+from tqdm.auto import tqdm
+
 
 import librosa
 import whisper
+
+import os, tempfile
+os.environ["IMAGEIO_FFMPEG_EXE"] = "/usr/bin/ffmpeg"
+os.environ["TMPDIR"] = "/tmp"
+tempfile.tempdir = "/tmp"
+
+
 
 # Optional phonemizers
 try:
@@ -678,21 +686,27 @@ def main():
     clip = ImageSequenceClip(frames_out, fps=FRAMERATE)
     audio = AudioFileClip(str(AUDIO_PATH))
     clip = clip.set_audio(audio)
+    # Generate unique temp path inside /tmp
+    temp_audio_path = f"/tmp/temp_audio_{os.getpid()}.m4a"
+
     clip.write_videofile(
         str(OUT_VIDEO),
         codec="libx264",
         audio_codec="aac",
         fps=FRAMERATE,
-        preset='ultrafast',  # Much faster encoding
+        temp_audiofile=temp_audio_path,
+        remove_temp=True,
+        preset="ultrafast",
         threads=multiprocessing.cpu_count(),
-        bitrate="1000k",  # Lower bitrate for speed
-        logger=None,  # Suppress verbose output
+        bitrate="1000k",
+        logger=None,
         ffmpeg_params=[
             "-pix_fmt", "yuv420p",
             "-crf", "28",
             "-movflags", "+faststart"
         ]
     )
+
 
     print("Video saved:", OUT_VIDEO, "| size:", (CANVAS_W, CANVAS_H))
     print("Tip: tweak --lipsync_offset ±0.02 and --min_seg_ms / --min_hold if needed.")
