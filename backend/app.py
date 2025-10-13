@@ -16,13 +16,30 @@ from datetime import datetime
 import shutil
 import tempfile
 import time
-
+from text_to_avatar import classify_emotion, generate_speech
 import logging
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
+
+# Add after imports
+try:
+    from langdetect import detect
+    HAVE_LANGDETECT = True
+except ImportError:
+    HAVE_LANGDETECT = False
+
+def detect_language(text: str) -> str:
+    """Detect language from text, return 'en' or 'tr'"""
+    if not HAVE_LANGDETECT:
+        return "en"  # default fallback
+    try:
+        lang = detect(text)
+        return "tr" if lang == "tr" else "en"
+    except:
+        return "en"
 
 from pathlib import Path
 import os
@@ -149,6 +166,10 @@ def process_text():
         if not text:
             return jsonify({'error': 'Empty text'}), 400
         
+        detected_language = detect_language(text)
+        tts_lang = data.get('tts_lang', detected_language)  # Use detected lang as default
+        print(f" Detected language: {detected_language}")
+        
         # Get TTS settings (emotion-based is now default for edge-tts)
         tts_engine = data.get('tts_engine', 'auto')
         tts_lang = data.get('tts_lang', 'en')
@@ -180,7 +201,7 @@ def process_text():
         print(f" Detecting emotion from text...")
         try:
             from text_to_avatar import classify_emotion
-            predicted_emotion = classify_emotion(text, "esracesur/roberta_weighted")
+            predicted_emotion = classify_emotion(text, language=detected_language)
             print(f" Predicted emotion: {predicted_emotion}")
         except Exception as e:
             print(f" Emotion detection failed: {e}, using neutral")
@@ -197,25 +218,25 @@ def process_text():
         
         # Build TTS script with emotion support
         if use_emotion_voice and TTS_AVAILABLE.get('edge'):
+            # In the emotion-based TTS path
             tts_script_content = f'''import sys
 from pathlib import Path
 
-# Add backend to path
 sys.path.insert(0, r"{Path(__file__).parent}")
 
 from text_to_avatar import generate_speech
 
 try:
-    # Use emotion-based voice selection
     generate_speech(
         text="""{text}""",
         output_path=Path(r"{audio_path}"),
         engine="edge",
         emotion="{predicted_emotion}",
-        lang="{tts_lang}"
+        lang="{detected_language}"
     )
     print("TTS_SUCCESS")
     print("EMOTION_USED: {predicted_emotion}")
+    print("LANGUAGE_USED: {detected_language}")
 except Exception as e:
     import traceback
     print(f"TTS_ERROR: {{e}}")
@@ -236,7 +257,8 @@ try:
         text="""{text}""",
         output_path=Path(r"{audio_path}"),
         engine="{tts_engine}",
-        lang="{tts_lang}"
+        lang="{detected_language}",
+        gender="{avatar_config.get('gender', 'female')}"
     )
     print("TTS_SUCCESS")
 except Exception as e:
@@ -309,7 +331,7 @@ except Exception as e:
             "--out_dir", str(job_output_dir),
             "--fps", "20",
             "--whisper_model", "base",
-            "--lipsync_offset", "-0.10",
+            "--lipsync_offset", "-0.10" if detected_language == "tr" else "-0.10",
             "--target_height", "720"
         ]
         
@@ -435,7 +457,7 @@ def process_audio():
             print(f" Transcript: {transcript[:100]}...")
             
             from text_to_avatar import classify_emotion
-            predicted_emotion = classify_emotion(transcript, "esracesur/roberta_weighted")
+            predicted_emotion = classify_emotion(transcript, language=detected_language)
             print(f" Predicted emotion: {predicted_emotion}")
         except Exception as e:
             print(f" Emotion detection failed: {e}, using neutral")
@@ -564,23 +586,21 @@ def serve_frontend():
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
-    mouthsets = []
-    if MOUTH_ROOT.exists():
-        mouthsets = [d.name for d in MOUTH_ROOT.iterdir() if d.is_dir()]
-    
+    # ... existing code ...
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
         'mouthsets_available': mouthsets,
         'tts_available': TTS_AVAILABLE,
         'avatar_composer_available': HAS_AVATAR_COMPOSER,
+        'language_detection_available': HAVE_LANGDETECT,  # ADD THIS
+        'emotion_models': {  # ADD THIS
+            'en': 'esracesur/roberta_weighted',
+            'tr': 'esracesur/roberta_turkish_emotion_recognition'
+        },
         'features': {
-            'audio_upload': True,
-            'text_to_speech': any(TTS_AVAILABLE.values()),
-            'emotion_detection': True,
-            'emotion_based_tts': TTS_AVAILABLE.get('edge', False),
-            'avatar_customization': HAS_AVATAR_COMPOSER
+            # ... existing features ...
+            'language_detection': HAVE_LANGDETECT  # ADD THIS
         }
     })
 

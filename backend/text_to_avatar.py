@@ -16,6 +16,24 @@ import shutil
 import logging, sys
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
+
+try:
+    from langdetect import detect
+    HAVE_LANGDETECT = True
+except ImportError:
+    HAVE_LANGDETECT = False
+
+def detect_language(text: str) -> str:
+    """Detect language from text, return 'en' or 'tr'"""
+    if not HAVE_LANGDETECT:
+        return "en"
+    try:
+        lang = detect(text)
+        return "tr" if lang == "tr" else "en"
+    except:
+        return "en"
+    
+
 # TTS imports with fallback handling
 TTS_AVAILABLE = {}
 
@@ -142,21 +160,28 @@ EMOTION_VOICE_MAP = {
     }
 }
 
-# Emotion model cache
-EMO_TOKENIZER = None
-EMO_MODEL = None
+EMO_MODELS = {}  # Model cache: {model_name: (tokenizer, model)}
 
 def load_emotion_model(model_name: str):
-    """Load emotion classification model"""
-    global EMO_TOKENIZER, EMO_MODEL
-    if EMO_TOKENIZER is None or EMO_MODEL is None:
-        if not HAVE_TRANSFORMERS:
-            raise RuntimeError("transformers not installed; pip install transformers torch")
-        print(f"Loading emotion model: {model_name}")
-        EMO_TOKENIZER = AutoTokenizer.from_pretrained(model_name)
-        EMO_MODEL = AutoModelForSequenceClassification.from_pretrained(model_name)
-        EMO_MODEL.eval()
-    return EMO_TOKENIZER, EMO_MODEL
+    """Load emotion classification model with proper caching"""
+    global EMO_MODELS
+    
+    # Check if already loaded
+    if model_name in EMO_MODELS:
+        return EMO_MODELS[model_name]
+    
+    if not HAVE_TRANSFORMERS:
+        raise RuntimeError("transformers not installed; pip install transformers torch")
+    
+    print(f"Loading emotion model: {model_name}")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+    model.eval()
+    
+    # Cache it
+    EMO_MODELS[model_name] = (tokenizer, model)
+    
+    return tokenizer, model
 
 # Normalize emotion labels
 _CANON = {
@@ -169,10 +194,24 @@ _CANON = {
     "surprised": "surprise", "surprise": "surprise",
 }
 
-def classify_emotion(text: str, model_name: str) -> str:
+def classify_emotion(text: str, model_name: str = None, language: str = None) -> str:
     """Classify emotion from text"""
     if not text.strip():
         return "neutral"
+    
+    
+    if language is None:
+        language = detect_language(text)
+    
+    # Select model based on language
+    if model_name is None:
+        model_name = (
+            "esracesur/roberta_turkish_emotion_recognition" if language == "tr" 
+            else "esracesur/roberta_weighted"
+        )
+    
+    print(f"Using emotion model: {model_name} (language: {language})")
+
     try:
         tok, mdl = load_emotion_model(model_name)
         toks = tok(text, truncation=True, max_length=256, return_tensors="pt")
@@ -190,7 +229,7 @@ def classify_emotion(text: str, model_name: str) -> str:
         return "neutral"
 
 
-def get_emotion_voice_config(emotion: str, language: str = "en") -> dict:
+def get_emotion_voice_config(emotion: str, language: str = "en", gender: str = "female") -> dict:
     """
     Get voice configuration for a specific emotion and language
     
@@ -208,6 +247,18 @@ def get_emotion_voice_config(emotion: str, language: str = "en") -> dict:
         emotion, 
         EMOTION_VOICE_MAP[lang_key]["neutral"]
     )
+
+        # Override voice based on gender
+    if lang_key == "tr":
+        if gender == "male":
+            emotion_config["voice"] = "tr-TR-AhmetNeural"
+        else:
+            emotion_config["voice"] = "tr-TR-EmelNeural"
+    elif lang_key == "en":
+        if gender == "male":
+            emotion_config["voice"] = "en-US-GuyNeural"
+        else:
+            emotion_config["voice"] = "en-US-AriaNeural"
     
     print(f"Voice config for {emotion} ({lang_key}):")
     print(f"   Voice: {emotion_config['voice']}")
@@ -222,12 +273,13 @@ async def generate_speech_edge_emotion_async(
     text: str, 
     output_path: Path, 
     emotion: str = "neutral",
-    language: str = "en"
+    language: str = "en",
+    gender: str = "female"
 ) -> None:
     """Generate speech using Edge TTS with emotion-appropriate voice"""
     
     # Get voice configuration for this emotion
-    voice_config = get_emotion_voice_config(emotion, language)
+    voice_config = get_emotion_voice_config(emotion, language, gender)
     
     voice = voice_config["voice"]
     rate = voice_config["rate"]
@@ -254,10 +306,11 @@ def generate_speech_edge_emotion(
     text: str, 
     output_path: Path, 
     emotion: str = "neutral",
-    language: str = "en"
+    language: str = "en",
+    gender: str = "female"
 ) -> None:
     """Wrapper for async Edge TTS with emotion"""
-    asyncio.run(generate_speech_edge_emotion_async(text, output_path, emotion, language))
+    asyncio.run(generate_speech_edge_emotion_async(text, output_path, emotion, language, gender))
 
 
 # Legacy TTS functions (unchanged)
@@ -340,7 +393,8 @@ def generate_speech(
         # NEW: Use emotion-based voice if emotion is provided
         if emotion and emotion != "neutral":
             language = kwargs.get('lang', 'en')
-            generate_speech_edge_emotion(text, output_path, emotion, language)
+            gender = kwargs.get('gender', 'female')  # Ekle
+            generate_speech_edge_emotion(text, output_path, emotion, language, gender)
         else:
             # Legacy: use manual voice selection
             voice = kwargs.get('voice', 'en-US-AriaNeural')
@@ -467,8 +521,8 @@ Examples:
     ap.add_argument("--tts", default="auto", 
                     choices=["auto", "gtts", "pyttsx3", "edge"],
                     help="TTS engine (default: auto-detect, prefers edge for emotion)")
-    ap.add_argument("--lang", default="en", 
-                    help="Language code (en/tr) for voice selection (default: en)")
+    ap.add_argument("--lang", default="auto",  # Change from "en" to "auto"
+                help="Language code (en/tr/auto) for voice selection (default: auto-detect)")
     ap.add_argument("--voice", default=None,
                     help="Manual voice override (disables emotion-based selection)")
     ap.add_argument("--rate", type=int, default=150,
@@ -524,7 +578,15 @@ Examples:
     if not text:
         print("Error: Empty text input")
         sys.exit(1)
-    
+
+    detected_language = detect_language(text)
+    if not args.lang or args.lang == "auto":
+        args.lang = detected_language
+    print(f"Detected language: {detected_language}")
+
+    print(f"Input text ({len(text)} chars):")
+    print(f"  {text[:100]}{'...' if len(text) > 100 else ''}\n")
+
     print(f"Input text ({len(text)} chars):")
     print(f"  {text[:100]}{'...' if len(text) > 100 else ''}\n")
     
@@ -532,7 +594,7 @@ Examples:
     detected_emotion = args.emotion
     if args.emotion == "auto" and HAVE_TRANSFORMERS:
         print(" Detecting emotion from text...")
-        detected_emotion = classify_emotion(text, args.emotion_model)
+        detected_emotion = classify_emotion(text, language=detected_language)
         print(f"→ Using emotion: {detected_emotion}\n")
     elif args.emotion == "auto":
         print(" Transformers not available, defaulting to neutral emotion\n")

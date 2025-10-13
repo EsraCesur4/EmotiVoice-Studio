@@ -20,6 +20,23 @@ Robustness:
 import sys, logging
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
+# Add after imports
+try:
+    from langdetect import detect
+    HAVE_LANGDETECT = True
+except ImportError:
+    HAVE_LANGDETECT = False
+
+def detect_language(text: str) -> str:
+    """Detect language from text, return 'en' or 'tr'"""
+    if not HAVE_LANGDETECT:
+        return "en"
+    try:
+        lang = detect(text)
+        return "tr" if lang == "tr" else "en"
+    except:
+        return "en"
+    
 
 # NLP Libraries
 try:
@@ -352,6 +369,33 @@ def naive_word_to_phones(word: str) -> str:
 def naive_phonemize_words(words):
     return [naive_word_to_phones(w["text"]) for w in words]
 
+def turkish_word_to_phones(word: str) -> str:
+    """Simple Turkish grapheme-to-phoneme mapper"""
+    w = word.lower()
+    
+    # Turkish-specific replacements
+    w = w.replace('ç', 'ch').replace('ş', 'sh').replace('ğ', '')
+    w = w.replace('ı', 'i').replace('ö', 'o').replace('ü', 'u')
+    
+    # Mark closures for viseme mapping
+    w = (w.replace("f", " F/V ").replace("v", " F/V ")
+           .replace("m", " M/B/P ").replace("b", " M/B/P ").replace("p", " M/B/P "))
+    
+    return " ".join(w.split())
+
+def smart_phonemize_words(words, language="en"):
+    """Phonemize words based on language"""
+    if language == "tr":
+        return [turkish_word_to_phones(w["text"]) for w in words]
+    elif language == "en" and G2P_EN is not None:
+        def _g2p_word(txt: str) -> str:
+            toks = G2P_EN(txt)
+            toks = [t for t in toks if re.match(r"^[A-Z]+[0-9]?$", t)]
+            return " ".join(toks)
+        return [_g2p_word(w["text"]) for w in words]
+    else:
+        return naive_phonemize_words(words)
+
 # ---------------------------
 # Emotion classification (Hugging Face)
 # ---------------------------
@@ -379,9 +423,21 @@ _CANON = {
     "surprised":"surprise","surprise":"surprise",
 }
 
-def classify_emotion(text: str, model_name: str) -> str:
+def classify_emotion(text: str, model_name: str = None, language: str = None) -> str:
     if not text.strip():
         return "neutral"
+    if language is None:
+        language = detect_language(text)
+    
+    # Select model based on language
+    if model_name is None:
+        model_name = (
+            "esracesur/roberta_turkish_emotion_recognition" if language == "tr" 
+            else "esracesur/roberta_weighted"
+        )
+    
+    print(f"Using emotion model: {model_name} (language: {language})")
+
     try:
         tok, mdl = load_emotion_model(model_name)
         toks = tok(text, truncation=True, max_length=256, return_tensors="pt")
@@ -493,26 +549,10 @@ def main():
     if not words:
         raise RuntimeError("No words/timestamps found in audio.")
 
-    # 2) Phonemize per word
-    ph_lang = "tr" if str(detected_lang).startswith("tr") else "en-us"
-    if ph_lang.startswith("en") and G2P_EN is not None:
-        print("Phonemizing as: en-us (g2p_en)")
-        def _g2p_word(txt: str) -> str:
-            toks = G2P_EN(txt)
-            toks = [t for t in toks if re.match(r"^[A-Z]+[0-9]?$", t)]
-            return " ".join(toks)
-        split_by_word = [_g2p_word(w["text"]) for w in words]
-    elif HAVE_PHONEMIZER and os.environ.get("PHONEMIZER_ESPEAK_PATH") and os.environ.get("ESPEAKNG_DATA_PATH"):
-        print(f"Phonemizing as: {ph_lang} (eSpeak NG)")
-        full_text = " ".join(w["text"] for w in words).strip() or " "
-        phones_all = phonemize(
-            full_text, language=ph_lang, backend='espeak', strip=True, preserve_punctuation=True,
-            separator=Separator(phone=' ', syllable='|', word='#')
-        )
-        split_by_word = [s for s in phones_all.split('#') if s.strip()]
-    else:
-        print("Phonemizer unavailable -> using naive fallback.")
-        split_by_word = naive_phonemize_words(words)
+    # 2) Phonemize per word - smart language detection
+    detected_language = detect_language(" ".join(w["text"] for w in words))
+    print(f"Phonemizing as: {detected_language} (smart mapper)")
+    split_by_word = smart_phonemize_words(words, language=detected_language)
 
     # Align lengths
     min_len = min(len(split_by_word), len(words))
