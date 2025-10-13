@@ -37,7 +37,10 @@ AutoModelForSequenceClassification.from_pretrained('esracesur/roberta_weighted')
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     DATA_DIR=/data \
-    PORT=7860
+    PORT=7860 \
+    NUMBA_CACHE_DIR=/tmp \
+    NUMBA_DISABLE_CACHING=1
+
 
 # ========== Expose Port ==========
 EXPOSE 7860
