@@ -455,7 +455,7 @@ def process_audio():
             result = model.transcribe(str(audio_path))
             transcript = result.get("text", "")
             print(f" Transcript: {transcript[:100]}...")
-            
+            detected_language = detect_language(transcript)
             from text_to_avatar import classify_emotion
             predicted_emotion = classify_emotion(transcript, language=detected_language)
             print(f" Predicted emotion: {predicted_emotion}")
