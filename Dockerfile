@@ -39,7 +39,13 @@ ENV PYTHONUNBUFFERED=1 \
     DATA_DIR=/data \
     PORT=7860 \
     NUMBA_CACHE_DIR=/tmp \
-    NUMBA_DISABLE_CACHING=1
+    NUMBA_DISABLE_CACHING=1 \
+    HF_HOME=/tmp/huggingface \
+    TRANSFORMERS_CACHE=/tmp/huggingface \
+    TORCH_HOME=/tmp/torch \
+    XDG_CACHE_HOME=/tmp \
+    WHISPER_CACHE_DIR=/tmp
+
 
 
 # ========== Expose Port ==========
