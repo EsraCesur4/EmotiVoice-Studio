@@ -252,20 +252,41 @@ def vowel_nucleus(phone: str):
     return None
 
 def phone_to_viseme(phone_token: str) -> str:
-    # respect explicit closure labels from naive mapper
-    if phone_token in {"F/V","M/B/P"}:
+    """Convert a phoneme to one of the main viseme categories."""
+    # Respect explicit markers
+    if phone_token in {"F/V", "M/B/P"}:
         return phone_token
-    # ARPAbet token?
+
+    # ARPAbet vowel tokens (English G2P)
     if re.match(r"^[A-Z]{2,3}\d?$", phone_token):
-        return arpa_to_viseme(phone_token)
-    # IPA token
+        t = strip_digits(phone_token)
+        if t in {"M", "B", "P"}:
+            return "M/B/P"
+        if t in {"F", "V"}:
+            return "F/V"
+        if t in {"AA", "AE", "AH", "AO", "AW", "AY"}:
+            return "AA"
+        if t in {"IY", "IH", "EY", "EH"}:
+            return "IY"
+        if t in {"UW", "UH", "OW", "OY"}:
+            return "UW"
+        return "REST"
+
+    # IPA / Turkish phones
     b = normalize_phone(phone_token)
-    if b in SPECIAL_TO_VISEME:
-        return SPECIAL_TO_VISEME[b]
+    if any(x in b for x in ["m", "b", "p", "n", "l"]):
+        return "M/B/P"
+    if any(x in b for x in ["f", "v"]):
+        return "F/V"
     v = vowel_nucleus(b)
-    if v is not None:
-        return V_MAP_BASE_VOWEL.get(v, "IY")
-    return "IY" if b in MID_OPEN_SET else V_DEFAULT
+    if v in {"a", "ɑ", "æ"}:
+        return "AA"
+    if v in {"i", "ɪ", "e", "ɛ"}:
+        return "IY"
+    if v in {"u", "ʊ", "o", "ɔ", "ø"}:
+        return "UW"
+    return "REST"
+
 
 def phones_to_visemes(phone_str: str):
     return [phone_to_viseme(t) for t in phone_str.split() if t]
@@ -625,6 +646,14 @@ def main():
             if b > a:
                 timeline.append({"viseme": vi, "start": round(a,3), "end": round(b,3), "weight": 1.0})
 
+        # Add REST for silence between words
+        if len(timeline) > 0:
+            prev_end = timeline[-1]["end"]
+            gap = w["start"] - prev_end
+            if gap > 0.12:  # silence longer than 120 ms
+                timeline.append({"viseme": "REST", "start": round(prev_end,3), "end": round(w["start"],3), "weight": 0.5})
+
+
     # 5) Clean timeline
     timeline = condense_same_visemes(timeline)
     timeline = squash_micro_segments(timeline, min_ms=args.min_seg_ms)
@@ -678,6 +707,20 @@ def main():
         for f in range(s, e):
             v = seg["viseme"] if seg["viseme"] in mouth_imgs else "REST"
             schedule[f] = v
+
+    # Replace frames with REST if local audio energy is very low
+    rms = librosa.feature.rms(y=y, frame_length=int(0.04*sr), hop_length=int(sr/FRAMERATE))[0]
+    energy_norm = (rms - rms.min()) / (rms.max() - rms.min() + 1e-6)
+    energy_threshold = 0.15  # Tune this (lower = more motion, higher = more REST)
+    for i in range(len(schedule)):
+        if energy_norm[min(i, len(energy_norm)-1)] < energy_threshold:
+            schedule[i] = "REST"
+    # Smooth out rapid flickering (keep viseme for at least 2 frames)
+    for i in range(1, len(schedule)):
+        if schedule[i] != schedule[i-1]:
+            if i >= 2 and schedule[i-2] == schedule[i]:
+                schedule[i-1] = schedule[i]
+
 
     schedule = stabilize_schedule(schedule, args.min_hold)
 
