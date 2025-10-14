@@ -42,6 +42,7 @@ pip-wheel-metadata/
 *.wav
 *.json
 *.zip
+*.mp3
 
 # ===== Local folders (can be mounted as volumes) =====
 backend/uploads/
