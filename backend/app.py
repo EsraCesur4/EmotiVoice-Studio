@@ -6,6 +6,7 @@ NOW WITH EMOTION-BASED TTS VOICE SELECTION
 
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
+import threading
 import os
 import sys
 import subprocess
@@ -23,6 +24,10 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
+
+# Global progress tracker
+progress = {"value": 0, "stage": "idle"}
+progress_lock = threading.Lock()
 
 # Add after imports
 try:
@@ -105,6 +110,16 @@ except ImportError:
     avatar_composer = None
     print(" Avatar composer not available (avatar customization disabled)")
 print("=" * 70)
+
+def set_progress(value, stage=""):
+    with progress_lock:
+        progress["value"] = int(value)
+        progress["stage"] = stage
+
+@app.route("/api/progress", methods=["GET"])
+def get_progress():
+    with progress_lock:
+        return jsonify(progress)
 
 
 @app.route('/api/avatar/options', methods=['GET'])
@@ -417,14 +432,18 @@ def process_audio():
     """
     Process audio → detect emotion → generate lipsync video
     """
+    set_progress(0, "Starting...")
+
     start_total = time.time()
     try:
         if 'audio' not in request.files:
+            set_progress(10, "Extracting audio")
             return jsonify({'error': 'No audio file provided'}), 400
         
         audio_file = request.files['audio']
         if audio_file.filename == '':
             return jsonify({'error': 'Empty filename'}), 400
+        
         
         # Get avatar configuration from form data
         avatar_config = {
@@ -451,17 +470,20 @@ def process_audio():
         print(f" Transcribing audio for emotion detection...")
         try:
             import whisper
+            set_progress(25, "Running Whisper")
             model = whisper.load_model("tiny")
             result = model.transcribe(str(audio_path))
             transcript = result.get("text", "")
             print(f" Transcript: {transcript[:100]}...")
             detected_language = detect_language(transcript)
             from text_to_avatar import classify_emotion
+            set_progress(40, "Classifying emotion")
             predicted_emotion = classify_emotion(transcript, language=detected_language)
             print(f" Predicted emotion: {predicted_emotion}")
         except Exception as e:
             print(f" Emotion detection failed: {e}, using neutral")
             predicted_emotion = "neutral"
+        
 
         # Create job output directory
         job_output_dir = OUTPUT_FOLDER / job_id
@@ -470,6 +492,7 @@ def process_audio():
         # STEP 2: Compose avatar ONLY for predicted emotion
         mouth_composition_duration = 0
         if HAS_AVATAR_COMPOSER:
+            set_progress(70, "Rendering frames")
             custom_mouthsets = job_output_dir / "custom_avatar"
             print(f"🎨 Composing avatar for emotion: {predicted_emotion}")
             start_compose = time.time()
@@ -489,6 +512,7 @@ def process_audio():
             mouth_dir = MOUTH_ROOT / predicted_emotion
 
         # STEP 3: Run lipsync
+        
         cmd = [
             sys.executable, str(LIPSYNC_SCRIPT),
             "--audio", str(audio_path),
@@ -502,6 +526,7 @@ def process_audio():
 
         print(f" Running pipeline...")
         start_pipeline = time.time()
+        set_progress(90, "Encoding video")
         
         result = subprocess.run(
             cmd,
@@ -543,6 +568,7 @@ def process_audio():
                 }
             }), 500
         
+        set_progress(100, "Complete")
         print(f"🎬 Video generated (Total duration: {total_duration:.2f}s)")
         
         # Clean up input audio

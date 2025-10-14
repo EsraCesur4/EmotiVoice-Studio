@@ -455,6 +455,14 @@
                     </div>
                 </div>
 
+
+                <div id="progress-wrapper" style="width:100%; margin-bottom:10px;">
+                    <label for="progress-bar" id="progress-label" style="color: var(--text-dark);">Ready</label>
+                    <progress id="progress-bar" value="0" max="100" style="width:100%; height:20px;"></progress>
+                </div>
+
+
+
                 <!-- Result Video - Moved here between input and customization -->
                 <div class="result-container" id="videoResult">
                     <div class="section-title">
@@ -520,7 +528,7 @@
                     </div>
                 </div>
 
-                <button class="action-btn" onclick="processInput()">
+                <button class="action-btn" onclick="onStartProcessing(); processInput();">
                     <i class="fas fa-play-circle"></i> Generate Avatar Video
                 </button>
                 
@@ -558,6 +566,36 @@
     </div>
 
     <script>
+        let progressTimer = null;
+
+        function startProgressPolling() {
+        const bar = document.getElementById('progress-bar');
+        const label = document.getElementById('progress-label');
+        
+        if (progressTimer) clearInterval(progressTimer);
+
+        progressTimer = setInterval(() => {
+            fetch('/api/progress')
+            .then(res => res.json())
+            .then(data => {
+                bar.value = data.value;
+                label.textContent = `${data.stage} (${data.value}%)`;
+                if (data.value >= 100) {
+                clearInterval(progressTimer);
+                label.textContent = "✅ Done!";
+                }
+            })
+            .catch(() => {});
+        }, 1000);
+        }
+
+        // When user starts upload/processing
+        function onStartProcessing() {
+        const bar = document.getElementById('progress-bar');
+        bar.value = 0;
+        startProgressPolling();
+        }
+
         let currentMode = 'audio';
 
         // --- AVATAR PREVIEW ---
