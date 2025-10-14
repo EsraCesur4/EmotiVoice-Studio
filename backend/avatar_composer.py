@@ -45,9 +45,8 @@ class AvatarComposer:
         gender = config.get('gender', 'female')
         gender_folder = self.avatar_root / gender
         
-        print(f"🎨 Composing {emotion} for {gender}...")
-        logging.info("🎨 Composing %s for %s...", emotion, gender)
-        print(f"📂 Gender folder: {gender_folder}")
+        print(f"Composing {emotion} for {gender}...")
+        logging.info("Composing %s for %s...", emotion, gender)
         
         # Mouth shapes to compose
         mouth_shapes = ["REST", "AA", "IY", "UW", "FV", "MBP"]
@@ -55,15 +54,10 @@ class AvatarComposer:
         for mouth_shape in mouth_shapes:
             mouth_path = gender_folder / 'mouthshapes' / emotion / f'{mouth_shape}.png'
             
-            if not mouth_path.exists():
-                print(f"⚠️  Missing: {mouth_path}")
-                continue
-            
             # LAYER ORDER (bottom to top):
-            # 1. Background (optional)
-            # 2. Hair (back layer)
-            # 3. Eyes (middle layer) - NOW WITH CORRECT PATH
-            # 4. Mouth shape (TOP - the actual mouth png)
+            # 1. Hair (back layer)
+            # 2. Eyes (middle layer) 
+            # 3. Mouth shape (top layer)
             
             # Load the mouth shape
             mouth_img = Image.open(mouth_path).convert("RGBA")
@@ -72,17 +66,7 @@ class AvatarComposer:
             # Start with transparent canvas
             result = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
             
-            # Layer 1: Background (optional, behind everything)
-            bg_color = config.get('background_color', 'pink')
-            bg_path = gender_folder / 'backgrounds' / f'{bg_color}.png'
-            if bg_path.exists():
-                bg = Image.open(bg_path).convert("RGBA")
-                if bg.size != canvas_size:
-                    bg = bg.resize(canvas_size, Image.LANCZOS)
-                result = Image.alpha_composite(result, bg)
-                print(f"  ✅ Background: {bg_color}")
-            
-            # Layer 2: Hair (FIRST/BACK)
+            # Layer 1: Hair (FIRST/BACK)
             hair_style = config.get('hair_style', 'wavy')
             hair_color = config.get('hair_color', 'brown')
             hair_path = gender_folder / 'hair' / hair_style / f'{hair_color}.png'
@@ -91,11 +75,8 @@ class AvatarComposer:
                 if hair.size != canvas_size:
                     hair = hair.resize(canvas_size, Image.LANCZOS)
                 result = Image.alpha_composite(result, hair)
-                print(f"  ✅ Hair: {hair_style}/{hair_color}")
-            else:
-                print(f"  ⚠️  Missing hair: {hair_path}")
             
-            # Layer 3: Eyes (MIDDLE - CORRECT PATH with emotion folder)
+            # Layer 2: Eyes (MIDDLE)
             eye_color = config.get('eye_color', 'brown')
             eyes_path = gender_folder / 'eyes' / emotion / f'{eye_color}.png'  # ← FIXED PATH
             if eyes_path.exists():
@@ -103,20 +84,15 @@ class AvatarComposer:
                 if eyes.size != canvas_size:
                     eyes = eyes.resize(canvas_size, Image.LANCZOS)
                 result = Image.alpha_composite(result, eyes)
-                print(f"  ✅ Eyes: {emotion}/{eye_color}")
-            else:
-                print(f"  ⚠️  Missing eyes: {eyes_path}")
             
-            # Layer 4: Mouth (TOP/FRONT - the actual mouth shape)
+            # Layer 3: Mouth (TOP/FRONT)
             result = Image.alpha_composite(result, mouth_img)
-            print(f"  ✅ Mouth: {mouth_shape}")
             
             # Save final composed image
             output_file = emotion_dir / f"{mouth_shape}.png"
             result.save(output_file)
-            print(f"  💾 Saved: {mouth_shape}.png")
         
-        print(f"✅ Composed {len(mouth_shapes)} mouthsets for {emotion}\n")
+        print(f"Composed {len(mouth_shapes)} mouthsets for {emotion}\n")
     
     def get_default_config(self):
         """Return default avatar configuration"""

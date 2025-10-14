@@ -52,7 +52,7 @@ except ImportError:
 
 EMOTION_LABELS = ["anger", "disgust", "fear", "joy", "neutral", "sadness", "surprise"]
 
-# ===== NEW: EMOTION-TO-VOICE MAPPING =====
+# ===== EMOTION-TO-VOICE MAPPING =====
 EMOTION_VOICE_MAP = {
     # English voices
     "en": {
@@ -146,7 +146,7 @@ EMOTION_VOICE_MAP = {
     }
 }
 
-EMO_MODELS = {}  # Model cache: {model_name: (tokenizer, model)}
+EMO_MODELS = {}  # Model cache
 
 def load_emotion_model(model_name: str):
     """Load emotion classification model with proper caching"""
@@ -234,7 +234,7 @@ def get_emotion_voice_config(emotion: str, language: str = "en", gender: str = "
         EMOTION_VOICE_MAP[lang_key]["neutral"]
     )
 
-        # Override voice based on gender
+    # Override voice based on gender
     if lang_key == "tr":
         if gender == "male":
             emotion_config["voice"] = "tr-TR-AhmetNeural"
@@ -245,13 +245,6 @@ def get_emotion_voice_config(emotion: str, language: str = "en", gender: str = "
             emotion_config["voice"] = "en-US-GuyNeural"
         else:
             emotion_config["voice"] = "en-US-AriaNeural"
-    
-    print(f"Voice config for {emotion} ({lang_key}):")
-    print(f"   Voice: {emotion_config['voice']}")
-    print(f"   Rate: {emotion_config['rate']}")
-    print(f"   Pitch: {emotion_config['pitch']}")
-    print(f"   Style: {emotion_config['style']}")
-    
     return emotion_config
 
 
@@ -264,17 +257,12 @@ async def generate_speech_edge_emotion_async(
 ) -> None:
     """Generate speech using Edge TTS with emotion-appropriate voice"""
     
-    # Get voice configuration for this emotion
+    # Get voice configuration for the emotion
     voice_config = get_emotion_voice_config(emotion, language, gender)
     
     voice = voice_config["voice"]
     rate = voice_config["rate"]
     pitch = voice_config["pitch"]
-    
-    print(f"Generating speech with Edge-TTS...")
-    print(f"  Emotion: {emotion}")
-    print(f"  Voice: {voice}")
-    print(f"  Rate: {rate}, Pitch: {pitch}")
     
     # Create communicate object with emotion parameters
     communicate = edge_tts.Communicate(
@@ -331,10 +319,6 @@ def generate_speech(
     if engine == "auto":
         if TTS_AVAILABLE.get('edge'):
             engine = 'edge'
-        elif TTS_AVAILABLE.get('gtts'):
-            engine = 'gtts'
-        elif TTS_AVAILABLE.get('pyttsx3'):
-            engine = 'pyttsx3'
         else:
             raise RuntimeError("No TTS engine available. Install: pip install gtts pyttsx3 edge-tts")
     
@@ -355,13 +339,13 @@ def generate_speech(
         if not TTS_AVAILABLE.get('edge'):
             raise RuntimeError("edge-tts not available. Install: pip install edge-tts")
         
-        # NEW: Use emotion-based voice if emotion is provided
+        # Use emotion-based voice if emotion is provided
         if emotion and emotion != "neutral":
             language = kwargs.get('lang', 'en')
             gender = kwargs.get('gender', 'female')  # Ekle
             generate_speech_edge_emotion(text, output_path, emotion, language, gender)
         else:
-            # Legacy: use manual voice selection
+            # use manual voice selection
             voice = kwargs.get('voice', 'en-US-AriaNeural')
             generate_speech_edge(text, output_path, voice)
     
@@ -383,9 +367,7 @@ def run_lipsync_pipeline(
     target_height: int = 720
 ) -> dict:
     """Run the lipsync pipeline"""
-    print(f"\n{'='*60}")
     print("Running lipsync pipeline...")
-    print(f"{'='*60}")
     
     cmd = [
         sys.executable, str(lipsync_script),
@@ -405,8 +387,6 @@ def run_lipsync_pipeline(
             "--emotion", emotion,
             "--emotion_model", emotion_model
         ])
-    
-    print(f"Command: {' '.join(cmd)}")
     
     # Run pipeline
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -521,14 +501,10 @@ Examples:
     args = ap.parse_args()
     
     # Print available TTS engines
-    print("\n" + "="*60)
-    print("Text-to-Avatar Pipeline with Emotion-Based TTS")
-    print("="*60)
     print("Available TTS engines:")
     for engine, available in TTS_AVAILABLE.items():
         status = " OK" if available else " NOT AVAILABLE"
         print(f"  {status} {engine}")
-    print("="*60 + "\n")
     
     # Get input text
     if args.text:
@@ -544,9 +520,6 @@ Examples:
     if not args.lang or args.lang == "auto":
         args.lang = detected_language
     print(f"Detected language: {detected_language}")
-
-    print(f"Input text ({len(text)} chars):")
-    print(f"  {text[:100]}{'...' if len(text) > 100 else ''}\n")
 
     print(f"Input text ({len(text)} chars):")
     print(f"  {text[:100]}{'...' if len(text) > 100 else ''}\n")
@@ -583,11 +556,6 @@ Examples:
         print(f" TTS generation failed: {e}")
         sys.exit(1)
     
-    # Verify lipsync script exists
-    if not args.lipsync_script.exists():
-        print(f" Lipsync script not found: {args.lipsync_script}")
-        sys.exit(1)
-    
     # Run lipsync pipeline
     result = run_lipsync_pipeline(
         audio_path=audio_path,
@@ -606,12 +574,10 @@ Examples:
     # Cleanup
     if not args.keep_audio and audio_path.exists():
         audio_path.unlink()
-        print(f"\n🗑 Removed temporary audio: {audio_path}")
     
     # Final report
-    print("\n" + "="*60)
     if result['success']:
-        print(" SUCCESS!")
+        print(" VIDEO CREATION SUCCESS!")
         print(f"  Video: {result['video_path']}")
         print(f"  Emotion: {result['emotion']}")
         print(f"  Output: {result['output_dir']}")
@@ -620,7 +586,6 @@ Examples:
         print(f"  Error: {result.get('error', 'Unknown error')}")
         sys.exit(1)
     print("="*60)
-
 
 if __name__ == "__main__":
     main()

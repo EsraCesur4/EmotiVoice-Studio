@@ -199,7 +199,6 @@ def process_text():
         
         # Build TTS script with emotion support
         if use_emotion_voice and TTS_AVAILABLE.get('edge'):
-            # In the emotion-based TTS path
             tts_script_content = f'''import sys
 from pathlib import Path
 sys.path.insert(0, r"{Path(__file__).parent}")
@@ -601,7 +600,6 @@ def serve_frontend():
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    # ... existing code ...
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),

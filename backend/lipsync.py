@@ -2,26 +2,28 @@
 # -*- coding: utf-8 -*-
 
 """
-Local lipsync pipeline (CPU-only, Windows-friendly)
-
+Local lipsync pipeline
 - Whisper (openai-whisper) -> words + timestamps
-- English phonemes via g2p_en (no eSpeak) [default for EN]
-- Turkish phonemes via phonemizer+eSpeak NG if available; else naive fallback
+- English phonemes via g2p_en
+- Turkish phonemes via phonemizer+eSpeak NG
 - Phones -> visemes (AA, IY, UW, F/V, M/B/P, REST)
 - Energy-based vowel nudging
-- Timeline cleaning & stabilization
 - Render frames + MP4 (moviepy)
-
-Robustness:
-- Load audio with librosa -> avoids Whisper's internal ffmpeg
-- MoviePy can use system ffmpeg or imageio-ffmpeg
-- Works even if eSpeak NG is not detected (EN via g2p_en; TR falls back)
 """
-
+import os, shutil
+from pathlib import Path
+import argparse, re, math, json
+from typing import List, Dict
+import numpy as np
+from PIL import Image, Image as PILImage
+from tqdm.auto import tqdm
+import librosa
+import whisper
+import tempfile
 import sys, logging
+from moviepy.editor import ImageSequenceClip, AudioFileClip
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-# Add after imports
 try:
     from langdetect import detect
     HAVE_LANGDETECT = True
@@ -38,7 +40,6 @@ def detect_language(text: str) -> str:
     except:
         return "en"
     
-
 # NLP Libraries
 try:
     import torch
@@ -47,35 +48,19 @@ try:
 except Exception:
     HAVE_TRANSFORMERS = False
 
-
-# ---------------------------
-# Early environment helpers
-# ---------------------------
-import os, shutil
-from pathlib import Path
-
-# Prefer a common Windows ffmpeg location if present (harmless elsewhere)
-# Ensure ffmpeg and espeak-ng paths are available in Docker (Linux) or Windows
-_ffmpeg_path = shutil.which("ffmpeg")
-if _ffmpeg_path:
-    print(f"✅ ffmpeg found at: {_ffmpeg_path}")
-else:
-    print("⚠️ ffmpeg not found in PATH — ensure it’s installed (Dockerfile already handles this).")
-
-# Optional: print espeak-ng info if available
-_espeak_path = shutil.which("espeak-ng")
-if _espeak_path:
-    os.environ["PHONEMIZER_ESPEAK_PATH"] = _espeak_path
-    print(f"✅ eSpeak NG found at: {_espeak_path}")
-
-
-# Let moviepy find a bundled ffmpeg if installed
 try:
     import imageio_ffmpeg
     os.environ["IMAGEIO_FFMPEG_EXE"] = imageio_ffmpeg.get_ffmpeg_exe()
 except Exception:
     pass
 
+_ffmpeg_path = shutil.which("ffmpeg")
+if _ffmpeg_path:
+    print(f"ffmpeg found at: {_ffmpeg_path}")
+
+_espeak_path = shutil.which("espeak-ng")
+if _espeak_path:
+    os.environ["PHONEMIZER_ESPEAK_PATH"] = _espeak_path
 
 _exe = os.environ.get("PHONEMIZER_ESPEAK_PATH")
 if _exe and Path(_exe).is_file():
@@ -85,27 +70,11 @@ if _exe and Path(_exe).is_file():
     if data_dir.is_dir() and "ESPEAKNG_DATA_PATH" not in os.environ:
         os.environ["ESPEAKNG_DATA_PATH"] = str(data_dir)
 
-# ---------------------------
-# Standard imports
-# ---------------------------
-import argparse, re, math, json
-from typing import List, Dict
-import numpy as np
-from PIL import Image, Image as PILImage
-from tqdm.auto import tqdm
-
-
-import librosa
-import whisper
-
-import os, tempfile
 os.environ["IMAGEIO_FFMPEG_EXE"] = "/usr/bin/ffmpeg"
 os.environ["TMPDIR"] = "/tmp"
 tempfile.tempdir = "/tmp"
 
-
-
-# Optional phonemizers
+# phonemizers
 try:
     from phonemizer import phonemize
     from phonemizer.separator import Separator
@@ -119,12 +88,7 @@ try:
 except Exception:
     G2P_EN = None
 
-from moviepy.editor import ImageSequenceClip, AudioFileClip
-
-# ---------------------------
 # Config-like constants
-# ---------------------------
-
 EMOTION_LABELS = ["anger","disgust","fear","joy","neutral","sadness","surprise"]
 
 MOUTH_FILES_DEFAULT = {
@@ -141,13 +105,10 @@ FV_WEIGHT      = 0.8
 MBP_WEIGHT     = 0.8
 DEFAULT_WEIGHT = 1.0
 ALIGN_STRENGTH = 0.3
-
 MIN_SEG_MS      = 40
 MIN_HOLD_FRAMES = 2
 
-# ---------------------------
 # File & image utilities
-# ---------------------------
 def ensure_dirs(*dirs: Path):
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
@@ -180,9 +141,7 @@ def load_mouth_images_original(mouth_map: Dict[str,str], roots: List[Path]):
 def time_to_frame_floor(t, fps): return int(math.floor(t * fps))
 def time_to_frame_ceil(t, fps):  return int(math.ceil (t * fps))
 
-# ---------------------------
 # Phone/Viseme mapping
-# ---------------------------
 def normalize_phone(p: str) -> str:
     p = p.lower()
     p = re.sub(r"[ːˑˈˌ̪̃̆ʲʰ]", "", p)
@@ -221,31 +180,25 @@ def looks_like_rounded_o(word: str) -> bool:
     w = word.lower()
     return any(_re_o.search(p, w) for p in O_ROUND_PATTERNS)
 
-
 def arpa_to_viseme(tok: str) -> str:
     """Better mapping to your existing 6 visemes"""
     t = strip_digits(tok)
-    
+
     # Open vowels -> AA (father, hot, cat)
     if t in {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY"}:
         return "AA"
-    
     # High front vowels -> IY (see, bit)
     if t in {"IY", "IH"}:
         return "IY"
-    
     # Rounded/back vowels -> UW (boot, boat, book)
     if t in {"UW", "UH", "OW", "OY"}:
         return "UW"
-    
     # Keep consonant closures
     if t in {"F", "V"}:
         return "F/V"
     if t in {"M", "B", "P"}:
         return "M/B/P"
-    
     # Everything else (T, D, K, G, N, L, R, S, Z, etc.) -> REST
-    # These are brief, mid-open positions
     return "REST"
 
 # IPA-based mapping (for phonemizer/espeak)
@@ -271,10 +224,9 @@ def vowel_nucleus(phone: str):
     return None
 
 def phone_to_viseme(phone_token: str) -> str:
-    # respect explicit closure labels from naive mapper
     if phone_token in {"F/V","M/B/P"}:
         return phone_token
-    # ARPAbet token?
+    # ARPAbet token
     if re.match(r"^[A-Z]{2,3}\d?$", phone_token):
         return arpa_to_viseme(phone_token)
     # IPA token
@@ -295,13 +247,13 @@ def phone_weights(phones, visemes):
     for ph, vi in zip(phones, visemes):
         phn = ph
         if is_arpabet_vowel(phn) or vowel_nucleus(normalize_phone(phn)) is not None:
-            w.append(2.0)  # Reduced from 3.0 - vowels less dominant
+            w.append(2.0)  
         elif vi == "F/V":
-            w.append(1.2)  # Increased from 0.8 - more presence
+            w.append(1.2)  
         elif vi == "M/B/P":
-            w.append(1.2)  # Increased from 0.8 - more presence
+            w.append(1.2)  
         else:
-            w.append(1.0)  # Increased from 0.8
+            w.append(1.0)  
     s = sum(w) or 1.0
     return [wi/s for wi in w]
 
@@ -339,14 +291,11 @@ def squash_micro_segments(tl, min_ms=25):
         dur = seg["end"] - seg["start"]
         
         # Keep segments that are long enough OR are important visemes
-        important_visemes = {"F/V", "M/B/P"}  # Consonant closures are brief but important
-        
+        important_visemes = {"F/V", "M/B/P"} 
         if dur >= min_s or seg["viseme"] in important_visemes or not out:
             out.append(seg)
             continue
-        
         prev = out[-1]
-        
         # Merge with previous if same
         if prev["viseme"] == seg["viseme"]:
             prev["end"] = seg["end"]
@@ -399,12 +348,12 @@ def stabilize_schedule(seq, min_hold=1):
             out[i] = out[i-1]
         i += 1
     
-    # Optional: enforce minimum hold only for very brief segments
+    # enforce minimum hold only for very brief segments
     if min_hold > 1:
         curr = out[0]
         count = 1
         positions = [0]
-        
+
         for i in range(1, len(out)):
             if out[i] == curr:
                 count += 1
@@ -419,9 +368,7 @@ def stabilize_schedule(seq, min_hold=1):
     
     return out
 
-# ---------------------------
 # Naive fallback (no eSpeak)
-# ---------------------------
 def naive_word_to_phones(word: str) -> str:
     # crude grapheme→"phones" signals closures for viseme mapping
     w = re.sub(r"[^a-zçğıöşüA-ZÇĞİÖŞÜ']", "", word.lower())
@@ -460,9 +407,7 @@ def smart_phonemize_words(words, language="en"):
     else:
         return naive_phonemize_words(words)
 
-# ---------------------------
 # Emotion classification (Hugging Face)
-# ---------------------------
 EMO_TOKENIZER = None
 EMO_MODEL = None
 
@@ -515,10 +460,7 @@ def classify_emotion(text: str, model_name: str = None, language: str = None) ->
         print("Emotion model failed, defaulting to neutral:", e)
         return "neutral"
 
-
-# ---------------------------
 # Main
-# ---------------------------
 def main():
     ap = argparse.ArgumentParser(description="Local lipsync (CPU) – Whisper + (g2p_en|phonemizer|naive) + moviepy")
     ap.add_argument("--audio", required=True, help="Path to input audio (wav/mp3)")
@@ -542,7 +484,6 @@ def main():
                 help="Target video height (480, 720, 1080). Lower = faster. Default: 720")
 
     args = ap.parse_args()
-
 
     # Echo encoder
     ffmpeg_path = shutil.which("ffmpeg")
@@ -574,14 +515,12 @@ def main():
         ], check=True)
         AUDIO_PATH = wav_converted
 
-
-    # ✅ OPTIMIZED: Load audio ONCE at native sample rate
+    # Load audio ONCE at native sample rate
     print("Loading audio...")
     y_native, sr_native = librosa.load(str(AUDIO_PATH), sr=None, mono=True)
     dur_audio = len(y_native) / sr_native
-    print(f"Using audio: {AUDIO_PATH.resolve()} ({dur_audio:.2f}s)")
 
-    # 1) Whisper on CPU - resample in memory (don't reload!)
+    # 1) Whisper on CPU
     print("Loading Whisper…")
     model = whisper.load_model(args.whisper_model, device="cpu")
     y_16k = librosa.resample(y_native, orig_sr=sr_native, target_sr=16000)
@@ -589,11 +528,10 @@ def main():
     detected_lang = res.get("language", "en")
     print("Detected language:", detected_lang)
 
-    
-    # Build transcript for emotion classifier
+    # transcript for emotion classifier
     transcript_text = " ".join(seg.get("text","") for seg in res.get("segments", [])).strip()
 
-    # Choose mouth folder: emotion-driven (if provided) or single-folder legacy
+    # Choose mouth folder
     if args.emotions_root:
         if args.emotion == "auto":
             chosen_emotion = classify_emotion(transcript_text, args.emotion_model)
@@ -603,10 +541,7 @@ def main():
         print(f"Emotion chosen: {chosen_emotion} -> {emotion_dir.resolve()}")
         MOUTH_DIRS = [emotion_dir]
     else:
-        # keep your existing single-folder mode
         MOUTH_DIRS = [Path(args.mouths)]
-        print(f"Emotion mode disabled; using single mouth folder: {MOUTH_DIRS[0].resolve()}")
-
 
     # words with timestamps
     words = []
@@ -629,7 +564,6 @@ def main():
 
     # 2) Phonemize per word - smart language detection
     detected_language = detect_language(" ".join(w["text"] for w in words))
-    print(f"Phonemizing as: {detected_language} (smart mapper)")
     split_by_word = smart_phonemize_words(words, language=detected_language)
 
     # Align lengths
@@ -663,7 +597,7 @@ def main():
             if force_o and is_vowel_phone(phn):
                 vis[j] = "UW"
 
-            # ---- FORCE "ee" and "eh" sounds to AA.png ----
+        # ---- FORCE "ee" and "eh" sounds to AA.png ----
         # ARPAbet: IY = “ee” (see), EH = “eh” (bed)
         for j, (phn, vi) in enumerate(zip(phones, vis)):
             # ARPAbet override
@@ -709,19 +643,14 @@ def main():
     timeline = carry_vowel(timeline, carry_ms=25)
 
     ensure_dirs(OUT_DIR, FRAMES_DIR)
-    # Optional: only save if debugging
     
-    print(f"imeline saved: {TIMELINE_JSON} | entries={len(timeline)}")
     if timeline[:10]:
-        print("peek:", timeline[:10])
+        print("timeline peek:", timeline[:10])
 
-    # 6) Load mouth images (original size)
-    # 6) Load mouth images and downscale for faster processing
+    # 6) Load mouth images
     print("Loading mouth images...")
     mouth_imgs, (CANVAS_W, CANVAS_H) = load_mouth_images_original(MOUTH_FILES_DEFAULT, MOUTH_DIRS)
-    print(f"Original canvas size: {CANVAS_W} x {CANVAS_H}")
 
-    # Downscale for MUCH faster rendering (2048px → 720px)
     TARGET_HEIGHT = args.target_height  # Options: 480 (fastest), 720 (balanced), 1080 (quality)
 
     if CANVAS_H > TARGET_HEIGHT:
@@ -729,22 +658,15 @@ def main():
         new_width = int(CANVAS_W * scale_factor)
         new_height = TARGET_HEIGHT
         
-        print(f" Downscaling to {new_width}x{new_height} for {scale_factor*100:.1f}% size ({(1-scale_factor)*100:.1f}% faster)")
-        
         # Resize all mouth images
         for key in mouth_imgs:
             mouth_imgs[key] = mouth_imgs[key].resize(
                 (new_width, new_height), 
                 Image.LANCZOS  # High-quality downscaling
             )
-        
         CANVAS_W, CANVAS_H = new_width, new_height
-        print(f" Resized to: {CANVAS_W} x {CANVAS_H}")
-    else:
-        print(f" Using original size: {CANVAS_W} x {CANVAS_H}")
 
     # 7) Build frame schedule
-
     total_frames = int(math.ceil(dur_audio * FRAMERATE))
     schedule = ["REST"] * total_frames
 
@@ -760,14 +682,12 @@ def main():
     schedule = stabilize_schedule(schedule, args.min_hold)
 
     # 8) Render frames
-    # 8) Render frames (optimized with caching)
     print("Rendering frames…")
     for p in Path(FRAMES_DIR).glob("frame_*.png"):
         try: p.unlink()
         except: pass
 
     # Pre-render unique visemes (cache)
-    print("Pre-rendering unique mouth positions...")
     mouth_cache = {}
     bg_rgb = SOLID_BG_RGB
     for viseme_key in set(schedule):
@@ -784,7 +704,6 @@ def main():
     if len(schedule) > 100:
         iterator = tqdm(schedule, desc="Rendering frames")
     else:
-        print(f"Rendering {len(schedule)} frames...")
         iterator = schedule
 
     for i, viseme in enumerate(iterator):
@@ -798,7 +717,6 @@ def main():
         return
 
     # 9) Assemble video
-    # 9) Assemble video with optimized settings
     print("Assembling video…")
     import multiprocessing
     clip = ImageSequenceClip(frames_out, fps=FRAMERATE)
@@ -824,10 +742,8 @@ def main():
             "-movflags", "+faststart"
         ]
     )
-
-
+    
     print("Video saved:", OUT_VIDEO, "| size:", (CANVAS_W, CANVAS_H))
-    print("Tip: tweak --lipsync_offset ±0.02 and --min_seg_ms / --min_hold if needed.")
 
 if __name__ == "__main__":
     main()

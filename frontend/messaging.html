@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emotion Lipsync Chat Demo</title>
     <style>
-        /* General Reset and Base Styles */
         * {
             margin: 0;
             padding: 0;
@@ -14,7 +13,6 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            /* Lighter Background Change: From dark to subtle light grey/white gradient */
             background: linear-gradient(135deg, #f4f7f6 0%, #dfe4e6 100%);
             min-height: 100vh;
             display: flex;
@@ -23,21 +21,18 @@
             padding: 20px;
         }
 
-        /* Phone Container */
         .phone-container {
             position: relative;
             width: 430px;
             height: 850px;
-            background: #ffffff; /* White background for the outer shell */
+            background: #ffffff; 
             border-radius: 50px;
-            /* Softer, more modern shadow and border */
             box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
-            border: 8px solid #333; /* Darker, thinner border for contrast */
+            border: 8px solid #333; 
             overflow: hidden;
             transition: box-shadow 0.3s ease;
         }
         
-        /* Subtle Hover Effect */
         .phone-container:hover {
             box-shadow: 0 15px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.08);
         }
@@ -47,7 +42,6 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            /* Slightly smaller and less intrusive notch */
             width: 150px;
             height: 28px;
             background: #000;
@@ -57,7 +51,6 @@
 
         .screen {
             height: 100%;
-            /* Solid, clean background for the screen area */
             background: #ffffff; 
             display: flex;
             flex-direction: column;
@@ -67,7 +60,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 40px 8px; /* Adjusted padding */
+            padding: 12px 40px 8px;
             font-size: 13px;
             font-weight: 600;
             color: #1f2937;
@@ -81,12 +74,12 @@
 
         .header {
             background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Lighter shadow */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
             padding: 12px 16px;
             display: flex;
             align-items: center;
             gap: 12px;
-            border-bottom: 1px solid #f3f4f6; /* Very subtle bottom border */
+            border-bottom: 1px solid #f3f4f6;
         }
 
         .back-btn {
@@ -99,7 +92,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #3498db; /* New primary color */
+            color: #3498db; 
             transition: background 0.2s;
         }
 
@@ -108,10 +101,10 @@
         }
 
         .avatar {
-            width: 44px; /* Slightly larger avatar */
+            width: 44px; 
             height: 44px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #9b59b6, #e74c3c); /* Updated gradient colors */
+            background: linear-gradient(135deg, #9b59b6, #e74c3c);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -126,7 +119,7 @@
         }
 
         .contact-name {
-            font-weight: 700; /* Bolder name */
+            font-weight: 700; 
             color: #111827;
             font-size: 17px;
         }
@@ -136,7 +129,7 @@
             align-items: center;
             gap: 6px;
             font-size: 12px;
-            color: #2ecc71; /* New active status color */
+            color: #2ecc71;
             margin-top: 2px;
         }
 
@@ -157,7 +150,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #95a5a6; /* Subtler color */
+            color: #95a5a6; 
             transition: background 0.2s;
         }
         
@@ -169,7 +162,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 16px;
-            background-color: #f9f9f9; /* Subtle chat background color */
+            background-color: #f9f9f9; 
         }
 
         .message {
@@ -204,7 +197,7 @@
         }
 
         .message.sent .message-avatar {
-            background: linear-gradient(135deg, #3498db, #2980b9); /* Sent message avatar gradient */
+            background: linear-gradient(135deg, #3498db, #2980b9); 
         }
 
         .message.received .message-avatar {
@@ -222,20 +215,20 @@
         }
 
         .bubble {
-            border-radius: 20px; /* Slightly rounder bubbles */
+            border-radius: 20px; 
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             overflow: hidden;
-            word-wrap: break-word; /* Ensure long words wrap */
+            word-wrap: break-word; 
         }
 
         .message.sent .bubble {
-            background: linear-gradient(135deg, #3498db, #2980b9); /* Primary blue gradient */
+            background: linear-gradient(135deg, #3498db, #2980b9); 
             color: white;
             border-bottom-right-radius: 6px;
         }
 
         .message.received .bubble {
-            background: #ffffff; /* White bubble for received messages */
+            background: #ffffff; 
             color: #1f2937;
             border-bottom-left-radius: 6px;
         }
@@ -257,13 +250,13 @@
 
         .message-text {
             padding: 12px 16px;
-            font-size: 15px; /* Slightly larger text */
+            font-size: 15px;
             line-height: 1.5;
         }
 
         .timestamp {
             font-size: 11px;
-            color: #95a5a6; /* Softer timestamp color */
+            color: #95a5a6; 
             margin-top: 4px;
             padding: 0 8px;
         }
@@ -325,8 +318,8 @@
             justify-content: space-between;
             background: #fef2f2;
             border: 2px solid #fecaca;
-            border-radius: 25px; /* Slightly smaller radius */
-            padding: 10px 18px; /* Slightly less padding */
+            border-radius: 25px; 
+            padding: 10px 18px; 
         }
 
         .recording-info {
@@ -338,7 +331,7 @@
         .recording-dot {
             width: 12px;
             height: 12px;
-            background: #e74c3c; /* Red dot */
+            background: #e74c3c; 
             border-radius: 50%;
             animation: pulse 1s infinite;
         }
@@ -349,7 +342,7 @@
         }
 
         .recording-label {
-            color: #c0392b; /* Darker red label */
+            color: #c0392b; 
             font-weight: 600;
             font-size: 14px;
         }
@@ -385,7 +378,7 @@
         }
 
         .control-btn {
-            width: 44px; /* Slightly smaller button */
+            width: 44px; 
             height: 44px;
             border-radius: 50%;
             border: none;
@@ -416,10 +409,10 @@
         .input-placeholder {
             flex: 1;
             background: #f3f4f6;
-            border-radius: 25px; /* Consistent radius */
+            border-radius: 25px; 
             padding: 12px 16px;
             font-size: 15px;
-            color: #95a5a6; /* Softer color */
+            color: #95a5a6; 
         }
 
         .home-indicator {
@@ -432,7 +425,7 @@
         .indicator-bar {
             width: 128px;
             height: 4px;
-            background: #95a5a6; /* Softer indicator color */
+            background: #95a5a6; 
             border-radius: 2px;
             opacity: 0.6;
         }
@@ -448,11 +441,11 @@
 
         .audio-options {
             position: absolute;
-            bottom: 60px; /* Adjusted position to align with new button size */
+            bottom: 60px; 
             right: 16px;
             background: white;
-            border-radius: 12px; /* Smaller radius */
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1); /* Lighter shadow */
+            border-radius: 12px; 
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1); 
             padding: 8px;
             display: none;
             flex-direction: column;
@@ -480,7 +473,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 10px 14px; /* Slightly less padding */
+            padding: 10px 14px;
             border: none;
             background: transparent;
             border-radius: 10px;
@@ -493,14 +486,13 @@
         }
 
         .audio-option-btn:hover {
-            background: #ecf0f1; /* Light hover background */
+            background: #ecf0f1; 
         }
 
         .audio-option-btn svg {
             flex-shrink: 0;
         }
 
-        /* Customization Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -508,7 +500,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5); /* Slightly lighter overlay */
+            background: rgba(0,0,0,0.5); 
             z-index: 1000;
             align-items: center;
             justify-content: center;
@@ -521,10 +513,10 @@
 
         .customization-modal {
             background: white;
-            border-radius: 16px; /* Smaller radius */
+            border-radius: 16px; 
             padding: 24px;
             width: 90%;
-            max-width: 380px; /* Slightly wider modal */
+            max-width: 380px; 
             max-height: 80vh;
             overflow-y: auto;
             animation: slideUp 0.3s ease-out;
@@ -536,7 +528,7 @@
             height: 200px;
             margin: 0 auto 24px;
             border-radius: 12px;
-            background: #ecf0f1; /* Lighter background */
+            background: #ecf0f1; 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -578,7 +570,7 @@
         .modal-title {
             font-size: 20px;
             font-weight: 700;
-            color: #34495e; /* Darker text */
+            color: #34495e;
         }
 
         .close-btn {
@@ -617,9 +609,9 @@
         }
 
         .option-btn {
-            padding: 8px 14px; /* Adjusted padding */
+            padding: 8px 14px; 
             border-radius: 10px;
-            border: 2px solid #ecf0f1; /* Lighter border */
+            border: 2px solid #ecf0f1; 
             background: white;
             color: #7f8c8d;
             font-size: 13px;
@@ -657,7 +649,6 @@
             transform: scale(1.01);
         }
 
-        /* Tutorial Overlay */
         .tutorial-overlay {
             display: none;
             position: fixed;
@@ -759,7 +750,6 @@
             border-radius: 4px;
         }
 
-        /* Progress Bar for Video Generation */
         .video-progress-container {
             width: 100%;
             padding: 24px;
