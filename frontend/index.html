@@ -566,28 +566,37 @@
     </div>
 
     <script>
-        let progressTimer = null;
+let progressTimer = null;
 
         function startProgressPolling() {
-        const bar = document.getElementById('progress-bar');
-        const label = document.getElementById('progress-label');
-        
-        if (progressTimer) clearInterval(progressTimer);
+            const bar = document.getElementById('progress-bar');
+            const label = document.getElementById('progress-label');
+            
+            // Stop any previous timer
+            if (progressTimer) clearInterval(progressTimer);
 
-        progressTimer = setInterval(() => {
-            fetch('/api/progress')
-            .then(res => res.json())
-            .then(data => {
-                bar.value = data.value;
-                label.textContent = `${data.stage} (${data.value}%)`;
-                if (data.value >= 100) {
-                clearInterval(progressTimer);
-                label.textContent = "✅ Done!";
-                }
-            })
-            .catch(() => {});
-        }, 1000);
+            progressTimer = setInterval(() => {
+                fetch('/api/progress')
+                .then(res => res.json())
+                .then(data => {
+                    // Update bar
+                    bar.value = data.value;
+                    label.textContent = `${data.stage} (${data.value}%)`;
+
+                    // When done, stop polling
+                    if (data.value >= 100) {
+                        clearInterval(progressTimer);
+                        label.textContent = "✅ Done!";
+                        // Optional: fade out bar
+                        setTimeout(() => {
+                            document.getElementById('progress-wrapper').style.display = "none";
+                        }, 1500);
+                    }
+                })
+                .catch(() => {});
+            }, 1000);
         }
+
 
         // When user starts upload/processing
         function onStartProcessing() {
