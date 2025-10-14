@@ -984,7 +984,11 @@
             <div class="option-group">
                 <label class="option-label">Hair Style</label>
                 <div class="option-buttons" id="hairStyleOptions">
-                    </div>
+                    <button class="option-btn" onclick="selectOption('hair_style', 'curly', this)">Curly</button>
+                    <button class="option-btn" onclick="selectOption('hair_style', 'short', this)">Short</button>
+                    <button class="option-btn selected" onclick="selectOption('hair_style', 'straight', this)">Straight</button>
+                    <button class="option-btn" onclick="selectOption('hair_style', 'wavy', this)">Wavy</button>
+                </div>
             </div>
 
             <div class="option-group" id="hairColorGroup">
@@ -1122,17 +1126,20 @@
             container.innerHTML = '';
             
             const styles = hairStyles[gender];
-            styles.forEach((style, index) => {
+            styles.forEach((style) => {
                 const btn = document.createElement('button');
-                btn.className = 'option-btn' + (index === styles.length - 1 ? ' selected' : '');
+                // Check if this style matches the current avatarConfig
+                btn.className = 'option-btn' + (style === avatarConfig.hair_style ? ' selected' : '');
                 btn.setAttribute('data-value', style);
                 btn.textContent = style.replace('_', ' ');
                 btn.onclick = function() { selectOption('hair_style', style, this); };
                 container.appendChild(btn);
             });
             
-            // Update avatar config
-            avatarConfig.hair_style = styles[styles.length - 1];
+            // Only update if current style is not valid for this gender
+            if (!styles.includes(avatarConfig.hair_style)) {
+                avatarConfig.hair_style = styles[0]; // or styles[styles.length - 1] for last
+            }
         }
 
         function selectOption(category, value, button) {
