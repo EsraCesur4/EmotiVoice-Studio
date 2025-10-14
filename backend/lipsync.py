@@ -137,7 +137,7 @@ MOUTH_FILES_DEFAULT = {
 
 VOWEL_WEIGHT   = 3.0
 FV_WEIGHT      = 0.8
-MBP_WEIGHT     = 0.6
+MBP_WEIGHT     = 0.8
 DEFAULT_WEIGHT = 1.0
 ALIGN_STRENGTH = 0.5
 
@@ -252,41 +252,20 @@ def vowel_nucleus(phone: str):
     return None
 
 def phone_to_viseme(phone_token: str) -> str:
-    """Convert a phoneme to one of the main viseme categories."""
-    # Respect explicit markers
-    if phone_token in {"F/V", "M/B/P"}:
+    # respect explicit closure labels from naive mapper
+    if phone_token in {"F/V","M/B/P"}:
         return phone_token
-
-    # ARPAbet vowel tokens (English G2P)
+    # ARPAbet token?
     if re.match(r"^[A-Z]{2,3}\d?$", phone_token):
-        t = strip_digits(phone_token)
-        if t in {"M", "B", "P"}:
-            return "M/B/P"
-        if t in {"F", "V"}:
-            return "F/V"
-        if t in {"AA", "AE", "AH", "AO", "AW", "AY"}:
-            return "AA"
-        if t in {"IY", "IH", "EY", "EH"}:
-            return "IY"
-        if t in {"UW", "UH", "OW", "OY"}:
-            return "UW"
-        return "REST"
-
-    # IPA / Turkish phones
+        return arpa_to_viseme(phone_token)
+    # IPA token
     b = normalize_phone(phone_token)
-    if any(x in b for x in ["m", "b", "p"]):
-        return "M/B/P"
-    if any(x in b for x in ["f", "v"]):
-        return "F/V"
+    if b in SPECIAL_TO_VISEME:
+        return SPECIAL_TO_VISEME[b]
     v = vowel_nucleus(b)
-    if v in {"a", "ɑ", "æ"}:
-        return "AA"
-    if v in {"i", "ɪ", "e", "ɛ"}:
-        return "IY"
-    if v in {"u", "ʊ", "o", "ɔ", "ø"}:
-        return "UW"
-    return "REST"
-
+    if v is not None:
+        return V_MAP_BASE_VOWEL.get(v, "IY")
+    return "IY" if b in MID_OPEN_SET else V_DEFAULT
 
 def phones_to_visemes(phone_str: str):
     return [phone_to_viseme(t) for t in phone_str.split() if t]
@@ -646,14 +625,6 @@ def main():
             if b > a:
                 timeline.append({"viseme": vi, "start": round(a,3), "end": round(b,3), "weight": 1.0})
 
-        # Add REST for silence between words
-        if len(timeline) > 0:
-            prev_end = timeline[-1]["end"]
-            gap = w["start"] - prev_end
-            if gap > 0.35:  # silence longer than 120 ms
-                timeline.append({"viseme": "REST", "start": round(prev_end,3), "end": round(w["start"],3), "weight": 0.5})
-
-
     # 5) Clean timeline
     timeline = condense_same_visemes(timeline)
     timeline = squash_micro_segments(timeline, min_ms=args.min_seg_ms)
@@ -707,29 +678,6 @@ def main():
         for f in range(s, e):
             v = seg["viseme"] if seg["viseme"] in mouth_imgs else "REST"
             schedule[f] = v
-
-    # Replace frames with REST if local audio energy is very low
-    rms = librosa.feature.rms(y=y, frame_length=int(0.04*sr), hop_length=int(sr/FRAMERATE))[0]
-    energy_norm = (rms - rms.min()) / (rms.max() - rms.min() + 1e-6)
-    energy_threshold = 0.15  # Tune this (lower = more motion, higher = more REST)
-    for i in range(len(schedule)):
-        energy_val = energy_norm[min(i, len(energy_norm)-1)]
-        viseme = schedule[i]
-
-        # If low energy → REST
-        if energy_val < energy_threshold and viseme not in {"M/B/P"}:
-            schedule[i] = "REST"
-
-        # If vowel → override to open mouth if energy is moderate-high
-        elif energy_val > 0.07 and viseme in {"AA", "IY", "UW"}:
-            schedule[i] = viseme  # force open mouth dominance
-
-    # Smooth out rapid flickering (keep viseme for at least 2 frames)
-    for i in range(1, len(schedule)):
-        if schedule[i] != schedule[i-1]:
-            if i >= 2 and schedule[i-2] == schedule[i]:
-                schedule[i-1] = schedule[i]
-
 
     schedule = stabilize_schedule(schedule, args.min_hold)
 
