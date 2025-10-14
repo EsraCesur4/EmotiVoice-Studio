@@ -947,7 +947,6 @@
 
         function saveCustomization() {
             closeCustomization();
-            alert('✅ Avatar customized! Your next video will use this avatar. 🎨');
         }
 
         function addText() {
@@ -1182,8 +1181,6 @@
 
             const storyData = captureCanvas();
             createdStories.unshift(storyData);
-
-            alert('✅ Story posted to feed!');
             
             document.getElementById('creatorPage').classList.remove('active');
             document.getElementById('homePage').style.display = 'flex';

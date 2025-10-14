@@ -72,18 +72,14 @@ except ImportError:
 
 print(f" TTS engines available: {[k for k, v in TTS_AVAILABLE.items() if v]}")
 
-
-# Try to import avatar_composer (optional)
+# import avatar_composer
 try:
     from avatar_composer import AvatarComposer
     avatar_composer = AvatarComposer(AVATAR_ROOT)
     HAS_AVATAR_COMPOSER = True
-    print(" Avatar composer loaded")
 except ImportError:
     HAS_AVATAR_COMPOSER = False
     avatar_composer = None
-    print(" Avatar composer not available (avatar customization disabled)")
-print("=" * 70)
 
 def set_progress(value, stage=""):
     with progress_lock:
@@ -94,7 +90,6 @@ def set_progress(value, stage=""):
 def get_progress():
     with progress_lock:
         return jsonify(progress)
-
 
 @app.route('/api/avatar/options', methods=['GET'])
 def get_avatar_options():
@@ -110,13 +105,11 @@ def get_avatar_options():
                 'background_color': ['pink', 'blue', 'green', 'purple', 'white']
             }
         }), 200
-    
     try:
         options = avatar_composer.get_available_options()
         return jsonify(options)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/api/tts/engines', methods=['GET'])
 def get_tts_engines():
@@ -136,7 +129,6 @@ def get_tts_engines():
         },
         'emotion_based': TTS_AVAILABLE.get('edge', False)
     })
-
 
 @app.route('/api/process-text', methods=['POST'])
 def process_text():
@@ -161,7 +153,7 @@ def process_text():
         tts_lang = data.get('tts_lang', detected_language)  # Use detected lang as default
         print(f" Detected language: {detected_language}")
         
-        # Get TTS settings (emotion-based is now default for edge-tts)
+        # Get TTS settings
         tts_engine = data.get('tts_engine', 'auto')
         tts_lang = data.get('tts_lang', 'en')
         use_emotion_voice = data.get('use_emotion_voice', True)  # NEW: Enable emotion-based voice
@@ -176,9 +168,6 @@ def process_text():
         }
         
         print(f"\n Text input ({len(text)} chars): {text[:100]}...")
-        print(f" TTS engine: {tts_engine}")
-        print(f" Avatar config: {avatar_config}")
-        print(f" Use emotion-based voice: {use_emotion_voice}")
         
         # Generate unique job ID
         job_id = str(uuid.uuid4())[:8]
@@ -201,7 +190,7 @@ def process_text():
         
         # Generate audio from text using EMOTION-BASED TTS
         audio_path = job_output_dir / "tts_speech.wav"
-        print(f"🎵 Generating emotional speech...")
+        print(f"Generating speech...")
         
         start_tts = time.time()
         
@@ -224,8 +213,6 @@ try:
         lang="{detected_language}"
     )
     print("TTS_SUCCESS")
-    print("EMOTION_USED: {predicted_emotion}")
-    print("LANGUAGE_USED: {detected_language}")
 except Exception as e:
     import traceback
     print(f"TTS_ERROR: {{e}}")
@@ -294,7 +281,7 @@ except Exception as e:
         set_progress(70, "Rendering avatar")
         if HAS_AVATAR_COMPOSER:
             custom_mouthsets = job_output_dir / "custom_avatar"
-            print(f"🎨 Composing avatar for emotion: {predicted_emotion}")
+            print(f"Composing avatar for emotion: {predicted_emotion}")
             start_compose = time.time()
             try:
                 avatar_composer.compose_single_emotion(
@@ -370,7 +357,7 @@ except Exception as e:
                 }
             }), 500
         
-        print(f"🎬 Video generated (Total duration: {total_duration:.2f}s)")
+        print(f"Video generated (Total duration: {total_duration:.2f}s)")
         
         return jsonify({
             'success': True,
@@ -391,7 +378,7 @@ except Exception as e:
         
     except subprocess.TimeoutExpired:
         timeout_duration = time.time() - start_total if 'start_total' in locals() else -1
-        print(f"⏱ Processing timeout (lasted {timeout_duration:.2f}s)")
+        print(f"Processing timeout (lasted {timeout_duration:.2f}s)")
         return jsonify({'error': 'Processing timeout (>5 minutes)'}), 504
     
     except Exception as e:
@@ -427,7 +414,7 @@ def process_audio():
             if not sample_path.exists():
                 return jsonify({'error': f'Sample audio not found: {sample_filename}'}), 404
             
-            print(f"🎵 Using sample audio: {sample_filename}")
+            print(f"Using sample audio: {sample_filename}")
             
             # Generate unique job ID and copy sample to temp location
             job_id = str(uuid.uuid4())[:8]
@@ -446,13 +433,13 @@ def process_audio():
             
             # Generate unique job ID
             job_id = str(uuid.uuid4())[:8]
-            print(f"🎵 New job: {job_id}")
+            print(f"New job: {job_id}")
 
             # Save uploaded audio
             audio_ext = 'webm' if audio_file.filename.endswith('.webm') else 'wav'
             audio_path = UPLOAD_FOLDER / f"{job_id}_input.{audio_ext}"
             audio_file.save(audio_path)
-            print(f"📁 Audio saved: {audio_path}")
+            print(f"Audio saved: {audio_path}")
         
         
         # Get avatar configuration from form data
@@ -464,7 +451,7 @@ def process_audio():
             'background_color': request.form.get('background_color', 'pink')
         }
 
-        print(f"\n🎨 Avatar config: {avatar_config}")
+        print(f"\nAvatar config: {avatar_config}")
         
 
         # STEP 1: Quick transcription to detect emotion
@@ -703,35 +690,6 @@ def cleanup_job(job_id):
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/emotions', methods=['GET'])
-def list_emotions():
-    """List available emotion mouthsets"""
-    try:
-        if not MOUTH_ROOT.exists():
-            return jsonify({
-                'emotions': [],
-                'default': 'neutral',
-                'count': 0,
-                'error': 'Mouthsets folder not found'
-            })
-        
-        emotions = []
-        for d in MOUTH_ROOT.iterdir():
-            if d.is_dir():
-                has_rest = (d / "REST.png").exists() or (d / "REST.webp").exists()
-                if has_rest:
-                    emotions.append(d.name)
-        
-        return jsonify({
-            'emotions': sorted(emotions),
-            'default': 'neutral',
-            'count': len(emotions)
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     print("\n Starting Flask server...")
