@@ -591,10 +591,19 @@
 
         // When user starts upload/processing
         function onStartProcessing() {
-        const bar = document.getElementById('progress-bar');
-        bar.value = 0;
-        startProgressPolling();
+            const wrapper = document.getElementById('progress-wrapper');
+            const bar = document.getElementById('progress-bar');
+            const label = document.getElementById('progress-label');
+
+            // Reset state before every new generation
+            clearInterval(progressTimer); // stop any previous polling
+            wrapper.style.display = "block"; // ensure it's visible
+            bar.value = 0;
+            label.textContent = "Starting...";
+
+            startProgressPolling();
         }
+
 
         let currentMode = 'audio';
 

@@ -236,11 +236,8 @@ def process_text():
             # In the emotion-based TTS path
             tts_script_content = f'''import sys
 from pathlib import Path
-
 sys.path.insert(0, r"{Path(__file__).parent}")
-
 from text_to_avatar import generate_speech
-
 try:
     generate_speech(
         text="""{text}""",
@@ -262,11 +259,8 @@ except Exception as e:
             # Fallback to non-emotion TTS
             tts_script_content = f'''import sys
 from pathlib import Path
-
 sys.path.insert(0, r"{Path(__file__).parent}")
-
 from text_to_avatar import generate_speech
-
 try:
     generate_speech(
         text="""{text}""",
