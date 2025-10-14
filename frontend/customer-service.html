@@ -897,17 +897,6 @@
                         <button class="option-btn" onclick="selectOption('eye_color', 'green', this)">Green</button>
                     </div>
                 </div>
-
-                <div class="option-group">
-                    <label class="option-label">Background Color</label>
-                    <div class="option-buttons">
-                        <button class="option-btn" onclick="selectOption('background_color', 'pink', this)">Pink</button>
-                        <button class="option-btn" onclick="selectOption('background_color', 'blue', this)">Blue</button>
-                        <button class="option-btn" onclick="selectOption('background_color', 'green', this)">Green</button>
-                        <button class="option-btn" onclick="selectOption('background_color', 'purple', this)">Purple</button>
-                        <button class="option-btn selected" onclick="selectOption('background_color', 'white', this)">White</button>
-                    </div>
-                </div>
             </div>
 
             <button class="save-settings-btn" onclick="saveSettings()">
@@ -923,9 +912,8 @@
         const avatarConfig = {
             gender: 'female',
             hair_style: 'wavy',
-            hair_color: 'brown',
-            eye_color: 'brown',
-            background_color: 'white'
+            hair_color: 'blue',
+            eye_color: 'green',
         };
 
         // TTS configuration
@@ -969,7 +957,6 @@
             const hairStyle = avatarConfig.hair_style;
             const hairColor = avatarConfig.hair_color;
             const eyeColor = avatarConfig.eye_color;
-            const bgColor = avatarConfig.background_color;
             
             try {
                 // Load images
