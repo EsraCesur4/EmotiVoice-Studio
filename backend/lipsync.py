@@ -17,6 +17,7 @@ Robustness:
 - MoviePy can use system ffmpeg or imageio-ffmpeg
 - Works even if eSpeak NG is not detected (EN via g2p_en; TR falls back)
 """
+
 import sys, logging
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -559,6 +560,20 @@ def main():
     SOLID_BG_RGB = tuple(int(x.strip()) for x in args.bg.split(","))
 
     ensure_dirs(OUT_DIR, FRAMES_DIR)
+
+    import subprocess
+
+    if AUDIO_PATH.suffix == ".webm":
+        wav_converted = AUDIO_PATH.with_suffix(".wav")
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-i", str(AUDIO_PATH),
+            "-ar", "16000",  # resample
+            "-ac", "1",      # mono
+            str(wav_converted)
+        ], check=True)
+        AUDIO_PATH = wav_converted
+
 
     # ✅ OPTIMIZED: Load audio ONCE at native sample rate
     print("Loading audio...")

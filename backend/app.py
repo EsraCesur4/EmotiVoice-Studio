@@ -380,7 +380,7 @@ except Exception as e:
         
         print(f" Pipeline completed successfully (took {pipeline_duration:.2f}s)")
         set_progress(100, "Complete")
-        
+
         # Check video
         video_path = job_output_dir / "message1_lipsync.mp4"
         if not video_path.exists():
@@ -462,7 +462,7 @@ def process_audio():
         print(f"🎵 New job: {job_id}")
 
         # Save uploaded audio
-        audio_ext = audio_file.filename.split('.')[-1] if '.' in audio_file.filename else 'wav'
+        audio_ext = 'webm' if audio_file.filename.endswith('.webm') else 'wav'
         audio_path = UPLOAD_FOLDER / f"{job_id}_input.{audio_ext}"
         audio_file.save(audio_path)
         print(f" Audio saved: {audio_path}")

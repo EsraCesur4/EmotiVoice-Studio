@@ -1213,7 +1213,7 @@
                     };
 
                     mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         processAudio(audioBlob);
                         stream.getTracks().forEach(track => track.stop());
                     };
@@ -1265,7 +1265,7 @@
             document.getElementById('micBtn').disabled = true;
 
             const formData = new FormData();
-            formData.append('audio', audioBlob, 'recording.wav');
+            formData.append('audio', audioBlob, 'recording.webm');
             formData.append('gender', avatarConfig.gender);
             formData.append('hair_style', avatarConfig.hair_style);
             formData.append('hair_color', avatarConfig.hair_color);
