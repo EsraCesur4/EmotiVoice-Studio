@@ -437,13 +437,48 @@ def process_audio():
 
     start_total = time.time()
     try:
-        if 'audio' not in request.files:
-            set_progress(10, "Extracting audio")
-            return jsonify({'error': 'No audio file provided'}), 400
-        
-        audio_file = request.files['audio']
-        if audio_file.filename == '':
-            return jsonify({'error': 'Empty filename'}), 400
+        # Check if using sample audio or uploaded file
+        using_sample = 'sample_audio' in request.form
+
+        if using_sample:
+            # Handle sample audio
+            sample_filename = request.form.get('sample_audio')
+            if not sample_filename:
+                return jsonify({'error': 'No sample audio specified'}), 400
+            
+            # Path to sample audio files
+            SAMPLES_FOLDER = BASE_DIR / "samples"
+            sample_path = SAMPLES_FOLDER / sample_filename
+            
+            if not sample_path.exists():
+                return jsonify({'error': f'Sample audio not found: {sample_filename}'}), 404
+            
+            print(f"🎵 Using sample audio: {sample_filename}")
+            
+            # Generate unique job ID and copy sample to temp location
+            job_id = str(uuid.uuid4())[:8]
+            audio_path = UPLOAD_FOLDER / f"{job_id}_input.{sample_path.suffix[1:]}"
+            shutil.copy(sample_path, audio_path)
+            
+        else:
+            # Handle uploaded audio file
+            if 'audio' not in request.files:
+                set_progress(10, "Extracting audio")
+                return jsonify({'error': 'No audio file provided'}), 400
+            
+            audio_file = request.files['audio']
+            if audio_file.filename == '':
+                return jsonify({'error': 'Empty filename'}), 400
+            
+            # Generate unique job ID
+            job_id = str(uuid.uuid4())[:8]
+            print(f"🎵 New job: {job_id}")
+
+            # Save uploaded audio
+            audio_ext = 'webm' if audio_file.filename.endswith('.webm') else 'wav'
+            audio_path = UPLOAD_FOLDER / f"{job_id}_input.{audio_ext}"
+            audio_file.save(audio_path)
+            print(f"📁 Audio saved: {audio_path}")
         
         
         # Get avatar configuration from form data
@@ -457,15 +492,6 @@ def process_audio():
 
         print(f"\n🎨 Avatar config: {avatar_config}")
         
-        # Generate unique job ID
-        job_id = str(uuid.uuid4())[:8]
-        print(f"🎵 New job: {job_id}")
-
-        # Save uploaded audio
-        audio_ext = 'webm' if audio_file.filename.endswith('.webm') else 'wav'
-        audio_path = UPLOAD_FOLDER / f"{job_id}_input.{audio_ext}"
-        audio_file.save(audio_path)
-        print(f" Audio saved: {audio_path}")
 
         # STEP 1: Quick transcription to detect emotion
         print(f" Transcribing audio for emotion detection...")
@@ -585,6 +611,7 @@ def process_audio():
             'transcription': transcript if 'transcript' in locals() else 'Audio processed successfully',
             'video_url': f'/api/video/{job_id}',
             'avatar_config': avatar_config,
+            'using_sample': using_sample,
             'timing': {
                 'total_duration_s': f"{total_duration:.2f}",
                 'avatar_compose_s': f"{mouth_composition_duration:.2f}",
@@ -631,6 +658,20 @@ def health_check():
         }
     })
 
+@app.route('/samples/<filename>')
+def serve_sample_audio(filename):
+    """Serve sample audio files for preview"""
+    try:
+        SAMPLES_FOLDER = BASE_DIR / "samples"
+        sample_path = SAMPLES_FOLDER / filename
+        
+        if not sample_path.exists():
+            return jsonify({'error': 'Sample not found'}), 404
+        
+        return send_file(sample_path, mimetype='audio/mpeg')
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/assets/avatar/<path:filepath>')
 def serve_avatar_assets(filepath):

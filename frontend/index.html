@@ -276,6 +276,108 @@
         .file-upload-area p { color: var(--text-gray); margin-bottom: 10px; }
         .file-upload-area .file-types { font-size: 12px; color: var(--text-gray); }
         #file-info { font-size: 14px; color: var(--text-gray); margin-top: 10px; }
+        
+        /* SAMPLE AUDIO STYLES */
+        .sample-audio-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .sample-audio-card {
+            background: var(--bg-light);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .sample-audio-card:hover {
+            border-color: var(--primary);
+            background: rgba(67, 97, 238, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .sample-audio-card.selected {
+            border-color: var(--primary);
+            background: rgba(67, 97, 238, 0.1);
+        }
+
+        .sample-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .sample-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sample-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .sample-description {
+            font-size: 11px;
+            color: var(--text-gray);
+        }
+
+        .sample-play-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .sample-play-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+        }
+
+        .sample-play-btn i {
+            font-size: 12px;
+        }
+
+        .sample-selected-info {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(67, 97, 238, 0.1);
+            border-radius: var(--border-radius);
+            font-size: 13px;
+            color: var(--primary);
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sample-selected-info.show {
+            display: flex;
+        }
 
         /* COLLAPSIBLES */
         .collapsible-section { margin-bottom: 20px; }
@@ -428,6 +530,63 @@
                         <input type="file" id="audioFile" accept="audio/*" style="display: none;" onchange="handleFileSelect(this)">
                         <div id="file-info"></div>
                     </div>
+                    <div class="input-group">
+                    <label><i class="fas fa-music"></i> Or Choose a Sample Audio</label>
+                    <div class="sample-audio-grid">
+                        <div class="sample-audio-card" onclick="selectSampleAudio('sample1.mp3', 'Happy Sample Audio')">
+                            <div class="sample-icon">
+                                <i class="fas fa-smile"></i>
+                            </div>
+                            <div class="sample-info">
+                                <div class="sample-title">Happy Sample Audio</div>
+                                <div class="sample-description">Joyful happy birthday response</div>
+                            </div>
+                            <button class="sample-play-btn" onclick="event.stopPropagation(); playSampleAudio('sample1.mp3')">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </div>
+
+                        <div class="sample-audio-card" onclick="selectSampleAudio('sample2.mp3', 'Sad Sample Audio')">
+                            <div class="sample-icon">
+                                <i class="fas fa-sad-tear"></i>
+                            </div>
+                            <div class="sample-info">
+                                <div class="sample-title">Sad Sample Audio</div>
+                                <div class="sample-description">Melancholic emotional speech</div>
+                            </div>
+                            <button class="sample-play-btn" onclick="event.stopPropagation(); playSampleAudio('sample2.mp3')">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </div>
+
+                        <div class="sample-audio-card" onclick="selectSampleAudio('sample3.mp3', 'Fearful Sample Audio')">
+                            <div class="sample-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="sample-info">
+                                <div class="sample-title">Fearful Sample Audio</div>
+                                <div class="sample-description">Anxious worried voice</div>
+                            </div>
+                            <button class="sample-play-btn" onclick="event.stopPropagation(); playSampleAudio('sample3.mp3')">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </div>
+
+                        <div class="sample-audio-card" onclick="selectSampleAudio('sample4.mp3', 'Turkish Happy Sample Audio')">
+                            <div class="sample-icon">
+                                <i class="fas fa-flag"></i>
+                            </div>
+                            <div class="sample-info">
+                                <div class="sample-title">Turkish Happy Sample Audio</div>
+                                <div class="sample-description">🇹🇷 Mutlu Türkçe ses</div>
+                            </div>
+                            <button class="sample-play-btn" onclick="event.stopPropagation(); playSampleAudio('sample4.mp3')">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="sample-selected-info" class="sample-selected-info"></div>
+                </div>
                 </div>
 
                 <div id="text-section" class="input-section">
@@ -615,6 +774,8 @@ let progressTimer = null;
 
 
         let currentMode = 'audio';
+        let selectedSampleAudio = null;
+        let currentAudioPlayer = null;
 
         // --- AVATAR PREVIEW ---
         async function updateAvatarPreview() {
@@ -721,12 +882,52 @@ let progressTimer = null;
 
         function handleFileSelect(input) {
             const fileInfo = document.getElementById('file-info');
+            const sampleInfo = document.getElementById('sample-selected-info');
+            
             if (input.files.length > 0) {
                 const file = input.files[0];
                 fileInfo.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                
+                // Clear sample selection
+                selectedSampleAudio = null;
+                sampleInfo.classList.remove('show');
+                document.querySelectorAll('.sample-audio-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
             } else {
                 fileInfo.innerHTML = '';
             }
+        }
+
+        function selectSampleAudio(filename, title) {
+            selectedSampleAudio = filename;
+            
+            // Clear file input
+            const fileInput = document.getElementById('audioFile');
+            fileInput.value = '';
+            document.getElementById('file-info').innerHTML = '';
+            
+            // Update UI
+            document.querySelectorAll('.sample-audio-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            const sampleInfo = document.getElementById('sample-selected-info');
+            sampleInfo.innerHTML = `<i class="fas fa-check-circle"></i> Sample selected: ${title}`;
+            sampleInfo.classList.add('show');
+        }
+
+        function playSampleAudio(filename) {
+            // Stop current audio if playing
+            if (currentAudioPlayer) {
+                currentAudioPlayer.pause();
+                currentAudioPlayer = null;
+            }
+            
+            // Play new audio
+            currentAudioPlayer = new Audio(`/samples/${filename}`);
+            currentAudioPlayer.play();
         }
 
         function switchMode(mode) {
@@ -841,24 +1042,43 @@ let progressTimer = null;
                 
                 if (currentMode === 'audio') {
                     const fileInput = document.getElementById('audioFile');
-                    if (!fileInput.files.length) {
-                        throw new Error('Please select an audio file');
+                    
+                    // Check if using sample audio or uploaded file
+                    if (selectedSampleAudio) {
+                        // Use sample audio
+                        const formData = new FormData();
+                        formData.append('sample_audio', selectedSampleAudio);
+                        formData.append('gender', document.getElementById('gender').value);
+                        formData.append('hair_style', document.getElementById('hairStyle').value);
+                        formData.append('hair_color', document.getElementById('hairColor').value);
+                        formData.append('eye_color', document.getElementById('eyeColor').value);
+                        
+                        showStatus('Processing sample audio...', 'info');
+                        
+                        response = await fetch('/api/process-audio', {
+                            method: 'POST',
+                            body: formData
+                        });
+                    } else if (fileInput.files.length) {
+                        // Use uploaded file
+                        const formData = new FormData();
+                        formData.append('audio', fileInput.files[0]);
+                        formData.append('gender', document.getElementById('gender').value);
+                        formData.append('hair_style', document.getElementById('hairStyle').value);
+                        formData.append('hair_color', document.getElementById('hairColor').value);
+                        formData.append('eye_color', document.getElementById('eyeColor').value);
+                        
+                        showStatus('Uploading audio and processing...', 'info');
+                        
+                        response = await fetch('/api/process-audio', {
+                            method: 'POST',
+                            body: formData
+                        });
+                    } else {
+                        throw new Error('Please select an audio file or choose a sample');
                     }
-                    
-                    const formData = new FormData();
-                    formData.append('audio', fileInput.files[0]);
-                    formData.append('gender', document.getElementById('gender').value);
-                    formData.append('hair_style', document.getElementById('hairStyle').value);
-                    formData.append('hair_color', document.getElementById('hairColor').value);
-                    formData.append('eye_color', document.getElementById('eyeColor').value);
-                    
-                    showStatus('Uploading audio and processing...', 'info');
-                    
-                    response = await fetch('/api/process-audio', {
-                        method: 'POST',
-                        body: formData
-                    });
                 } else {
+                    // Text mode
                     const text = document.getElementById('textInput').value.trim();
                     if (!text) {
                         throw new Error('Please enter some text');
