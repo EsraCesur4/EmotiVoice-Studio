@@ -894,10 +894,39 @@
             </div>
 
             <div class="messages-area" id="messagesArea">
+                <!-- First message: Left side (received) -->
                 <div class="message received">
-                    <div class="message-avatar"></div>  <div class="message-content">
+                    <div class="message-avatar"></div>
+                    <div class="message-content">
                         <div class="bubble">
-                            <div class="message-text">Hey! Send me a voice message 🎤</div>
+                            <div class="message-text">How was your weekend?</div>
+                        </div>
+                        <div class="timestamp">2:15 PM</div>
+                    </div>
+                </div>
+
+                <!-- Second message: Right side (sent) with video -->
+                <div class="message sent">
+                    <div class="message-avatar"></div>
+                    <div class="message-content">
+                        <div class="bubble">
+                            <div class="video-container">
+                                <video controls preload="metadata">
+                                    <source src="/path/to/your/sample-video.mp4" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        </div>
+                        <div class="timestamp">2:17 PM</div>
+                    </div>
+                </div>
+
+                <!-- Third message: Left side (received) -->
+                <div class="message received">
+                    <div class="message-avatar"></div>
+                    <div class="message-content">
+                        <div class="bubble">
+                            <div class="message-text">Wow that's great to hear!</div>
                         </div>
                         <div class="timestamp">2:19 PM</div>
                     </div>
