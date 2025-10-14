@@ -1273,7 +1273,7 @@
 
             console.log('Sending request to backend...');
 
-            fetch('http://localhost:5000/api/process-audio', {
+            fetch('/api/process-audio', {
                 method: 'POST',
                 body: formData
             })
@@ -1292,7 +1292,9 @@
                 hideProcessing();
                 document.getElementById('micBtn').disabled = false;
                 
-                const videoUrl = data.video_url ? `http://localhost:5000${data.video_url}` : null;
+                const videoUrl = data.video_url
+                ? `${window.location.origin}${data.video_url}`
+                : null;
                 
                 addMessage('sent', data.transcription || 'Audio processed successfully', data.emotion || 'neutral', videoUrl, true);
 
