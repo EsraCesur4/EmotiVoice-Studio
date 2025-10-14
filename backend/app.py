@@ -169,11 +169,13 @@ def process_text():
     """
     Process text → EMOTION-BASED TTS → detect emotion → generate lipsync video
     """
+    set_progress(0, "Starting...")
     start_total = time.time()
     try:
         data = request.json
         
         # Validate text input
+        set_progress(10, "Generating TTS speech")
         if not data or 'text' not in data:
             return jsonify({'error': 'No text provided'}), 400
         
@@ -214,6 +216,7 @@ def process_text():
         
         # STEP 1: Detect emotion FIRST (before TTS and avatar composition)
         print(f" Detecting emotion from text...")
+        set_progress(40, "Classifying emotion")
         try:
             from text_to_avatar import classify_emotion
             predicted_emotion = classify_emotion(text, language=detected_language)
@@ -309,10 +312,12 @@ except Exception as e:
                 'details': 'Audio file not found after TTS'
             }), 500
         
+        
         print(f" Speech generated with emotion: {predicted_emotion} (took {tts_duration:.2f}s)")
         
         # STEP 2: Compose avatar for the predicted emotion
         mouth_composition_duration = 0
+        set_progress(70, "Rendering avatar")
         if HAS_AVATAR_COMPOSER:
             custom_mouthsets = job_output_dir / "custom_avatar"
             print(f"🎨 Composing avatar for emotion: {predicted_emotion}")
@@ -346,6 +351,7 @@ except Exception as e:
         
         print(f" Running lipsync pipeline...")
         start_pipeline = time.time()
+        set_progress(90, "Encoding video")
         
         result = subprocess.run(
             cmd,
@@ -373,6 +379,7 @@ except Exception as e:
             }), 500
         
         print(f" Pipeline completed successfully (took {pipeline_duration:.2f}s)")
+        set_progress(100, "Complete")
         
         # Check video
         video_path = job_output_dir / "message1_lipsync.mp4"
