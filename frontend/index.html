@@ -729,7 +729,6 @@
 
     <script>
 let progressTimer = null;
-const imageCache = {};
 
         function startProgressPolling() {
             const bar = document.getElementById('progress-bar');
@@ -803,39 +802,16 @@ const imageCache = {};
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, width, height);
             
-            const loadImage = (src) => {
-        if (imageCache[src]) return Promise.resolve(imageCache[src]);
-
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.decoding = "async";
-            img.loading = "lazy";
-            img.onload = () => {
-                // Create a smaller offscreen canvas (downscale before drawing)
-                const off = document.createElement("canvas");
-                const maxDim = 512; // target max dimension for preview
-                const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
-                off.width = img.width * scale;
-                off.height = img.height * scale;
-                const offCtx = off.getContext("2d");
-                offCtx.drawImage(img, 0, 0, off.width, off.height);
-
-                // Convert to lightweight in-memory image
-                const scaled = new Image();
-                scaled.src = off.toDataURL("image/webp", 0.8); // compressed WebP preview
-                scaled.onload = () => {
-                    imageCache[src] = scaled; // cache the scaled image
-                    resolve(scaled);
-                };
-            };
-            img.onerror = () => resolve(null);
-            img.src = src;
-        });
-    };
-    
             try {
-
+                const loadImage = (src) => {
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => resolve(img);
+                        img.onerror = () => resolve(null);
+                        img.src = src;
+                    });
+                };
                 
                 // Build paths
                 let hairPath;
