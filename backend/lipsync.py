@@ -139,10 +139,10 @@ VOWEL_WEIGHT   = 3.0
 FV_WEIGHT      = 0.8
 MBP_WEIGHT     = 0.8
 DEFAULT_WEIGHT = 1.0
-ALIGN_STRENGTH = 0.5
+ALIGN_STRENGTH = 0.3
 
-MIN_SEG_MS      = 80
-MIN_HOLD_FRAMES = 3
+MIN_SEG_MS      = 25
+MIN_HOLD_FRAMES = 1
 
 # ---------------------------
 # File & image utilities
@@ -222,12 +222,30 @@ def looks_like_rounded_o(word: str) -> bool:
 
 
 def arpa_to_viseme(tok: str) -> str:
+    """Better mapping to your existing 6 visemes"""
     t = strip_digits(tok)
-    if t in {"AA","AE","AH","AO"}: return "AA"
-    if t in {"IY","IH"}:           return "IY"
-    if t in {"UW","UH","OW","OY"}: return "UW"
-    # consonant closures handled elsewhere; default mid-open → IY, else REST
-    return "IY"
+    
+    # Open vowels -> AA (father, hot, cat)
+    if t in {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY"}:
+        return "AA"
+    
+    # High front vowels -> IY (see, bit)
+    if t in {"IY", "IH"}:
+        return "IY"
+    
+    # Rounded/back vowels -> UW (boot, boat, book)
+    if t in {"UW", "UH", "OW", "OY"}:
+        return "UW"
+    
+    # Keep consonant closures
+    if t in {"F", "V"}:
+        return "F/V"
+    if t in {"M", "B", "P"}:
+        return "M/B/P"
+    
+    # Everything else (T, D, K, G, N, L, R, S, Z, etc.) -> REST
+    # These are brief, mid-open positions
+    return "REST"
 
 # IPA-based mapping (for phonemizer/espeak)
 V_DEFAULT = "REST"
@@ -271,17 +289,18 @@ def phones_to_visemes(phone_str: str):
     return [phone_to_viseme(t) for t in phone_str.split() if t]
 
 def phone_weights(phones, visemes):
+    """More balanced timing - don't let vowels dominate so much"""
     w = []
     for ph, vi in zip(phones, visemes):
         phn = ph
         if is_arpabet_vowel(phn) or vowel_nucleus(normalize_phone(phn)) is not None:
-            w.append(VOWEL_WEIGHT)
+            w.append(2.0)  # Reduced from 3.0 - vowels less dominant
         elif vi == "F/V":
-            w.append(FV_WEIGHT)
+            w.append(1.2)  # Increased from 0.8 - more presence
         elif vi == "M/B/P":
-            w.append(MBP_WEIGHT)
+            w.append(1.2)  # Increased from 0.8 - more presence
         else:
-            w.append(DEFAULT_WEIGHT)
+            w.append(1.0)  # Increased from 0.8
     s = sum(w) or 1.0
     return [wi/s for wi in w]
 
@@ -307,24 +326,48 @@ def condense_same_visemes(tl):
             out.append(seg.copy())
     return out
 
-def squash_micro_segments(tl, min_ms=80):
-    if not tl: return tl
-    min_s = min_ms/1000.0
+def squash_micro_segments(tl, min_ms=25):
+    """Less aggressive - preserve more rapid movements"""
+    if not tl:
+        return tl
+    
+    min_s = min_ms / 1000.0
     out = []
+    
     for i, seg in enumerate(tl):
         dur = seg["end"] - seg["start"]
-        if dur >= min_s or not out:
-            out.append(seg); continue
+        
+        # Keep segments that are long enough OR are important visemes
+        important_visemes = {"F/V", "M/B/P"}  # Consonant closures are brief but important
+        
+        if dur >= min_s or seg["viseme"] in important_visemes or not out:
+            out.append(seg)
+            continue
+        
         prev = out[-1]
+        
+        # Merge with previous if same
         if prev["viseme"] == seg["viseme"]:
             prev["end"] = seg["end"]
         else:
-            if i+1 < len(tl) and tl[i+1]["viseme"] == prev["viseme"]:
-                prev["end"] = seg["end"]
-            elif i+1 < len(tl):
-                tl[i+1]["start"] = min(tl[i+1]["start"], seg["start"])
+            # Check if next segment would benefit from this micro-segment
+            if i + 1 < len(tl):
+                next_seg = tl[i + 1]
+                # If it's a consonant closure, keep it even if brief
+                if seg["viseme"] in important_visemes:
+                    out.append(seg)
+                # Otherwise merge forward if possible
+                elif next_seg["viseme"] == prev["viseme"]:
+                    prev["end"] = seg["end"]
+                else:
+                    # Give the time to whichever neighbor is the same viseme
+                    if prev["viseme"] == seg["viseme"]:
+                        prev["end"] = seg["end"]
+                    else:
+                        next_seg["start"] = min(next_seg["start"], seg["start"])
             else:
                 prev["end"] = seg["end"]
+    
     return condense_same_visemes(out)
 
 def carry_vowel(tl, carry_ms=40):
@@ -340,19 +383,39 @@ def carry_vowel(tl, carry_ms=40):
                 seg["end"] = min(seg["end"] + extend, nxt["start"])
     return condense_same_visemes(out)
 
-def stabilize_schedule(seq, min_hold=3):
-    if not seq: return seq
-    out = []
-    curr = seq[0]; count = 0
-    for v in seq:
-        if v == curr:
-            count += 1; out.append(v)
-        else:
-            if count < min_hold and len(out) > count:
-                out[-count:] = [out[-count-1]] * count
-            curr = v; count = 1; out.append(v)
-    if count < min_hold and len(out) > count:
-        out[-count:] = [out[-count-1]] * count
+def stabilize_schedule(seq, min_hold=1):
+    """Much lighter stabilization - only remove single-frame flickers"""
+    if not seq or len(seq) < 2:
+        return seq
+    
+    out = list(seq)
+    
+    # Only fix single-frame anomalies (flickers)
+    i = 1
+    while i < len(out) - 1:
+        # If surrounded by same viseme, fix the flicker
+        if out[i] != out[i-1] and out[i] != out[i+1] and out[i-1] == out[i+1]:
+            out[i] = out[i-1]
+        i += 1
+    
+    # Optional: enforce minimum hold only for very brief segments
+    if min_hold > 1:
+        curr = out[0]
+        count = 1
+        positions = [0]
+        
+        for i in range(1, len(out)):
+            if out[i] == curr:
+                count += 1
+            else:
+                if count < min_hold and positions:
+                    # Extend previous viseme instead of creating brief flicker
+                    for pos in range(positions[-1], i):
+                        out[pos] = out[positions[-1]-1] if positions[-1] > 0 else out[i]
+                curr = out[i]
+                count = 1
+                positions.append(i)
+    
     return out
 
 # ---------------------------
@@ -628,7 +691,7 @@ def main():
     # 5) Clean timeline
     timeline = condense_same_visemes(timeline)
     timeline = squash_micro_segments(timeline, min_ms=args.min_seg_ms)
-    timeline = carry_vowel(timeline, carry_ms=40)
+    timeline = carry_vowel(timeline, carry_ms=25)
 
     ensure_dirs(OUT_DIR, FRAMES_DIR)
     # Optional: only save if debugging
