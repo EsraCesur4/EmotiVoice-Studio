@@ -33,22 +33,8 @@ def detect_language(text: str) -> str:
     except:
         return "en"
     
-
 # TTS imports with fallback handling
 TTS_AVAILABLE = {}
-
-try:
-    from gtts import gTTS
-    TTS_AVAILABLE['gtts'] = True
-except ImportError:
-    TTS_AVAILABLE['gtts'] = False
-
-try:
-    import pyttsx3
-    TTS_AVAILABLE['pyttsx3'] = True
-except ImportError:
-    TTS_AVAILABLE['pyttsx3'] = False
-
 try:
     import edge_tts
     import asyncio
@@ -312,33 +298,12 @@ def generate_speech_edge_emotion(
     """Wrapper for async Edge TTS with emotion"""
     asyncio.run(generate_speech_edge_emotion_async(text, output_path, emotion, language, gender))
 
-
-# Legacy TTS functions (unchanged)
-def generate_speech_gtts(text: str, output_path: Path, lang: str = "en") -> None:
-    """Generate speech using Google TTS (requires internet)"""
-    print(f"Generating speech with gTTS (lang={lang})...")
-    tts = gTTS(text=text, lang=lang, slow=False)
-    tts.save(str(output_path))
-    print(f" Audio saved: {output_path}")
-
-
-def generate_speech_pyttsx3(text: str, output_path: Path, rate: int = 150) -> None:
-    """Generate speech using pyttsx3 (offline)"""
-    print(f"Generating speech with pyttsx3 (rate={rate})...")
-    engine = pyttsx3.init()
-    engine.setProperty('rate', rate)
-    engine.save_to_file(text, str(output_path))
-    engine.runAndWait()
-    print(f" Audio saved: {output_path}")
-
-
 async def generate_speech_edge_async(text: str, output_path: Path, voice: str = "en-US-AriaNeural") -> None:
     """Generate speech using Edge TTS (requires internet, high quality)"""
     print(f"Generating speech with Edge-TTS (voice={voice})...")
     communicate = edge_tts.Communicate(text, voice)
     await communicate.save(str(output_path))
     print(f" Audio saved: {output_path}")
-
 
 def generate_speech_edge(text: str, output_path: Path, voice: str = "en-US-AriaNeural") -> None:
     """Wrapper for async Edge TTS"""
@@ -519,15 +484,12 @@ Examples:
     
     # TTS settings
     ap.add_argument("--tts", default="auto", 
-                    choices=["auto", "gtts", "pyttsx3", "edge"],
+                    choices=["auto", "edge"],
                     help="TTS engine (default: auto-detect, prefers edge for emotion)")
     ap.add_argument("--lang", default="auto",  # Change from "en" to "auto"
                 help="Language code (en/tr/auto) for voice selection (default: auto-detect)")
     ap.add_argument("--voice", default=None,
                     help="Manual voice override (disables emotion-based selection)")
-    ap.add_argument("--rate", type=int, default=150,
-                    help="Speech rate for pyttsx3 (default: 150)")
-    
     # Lipsync settings
     ap.add_argument("--mouths", type=Path, required=True,
                     help="Folder containing mouth images (REST.png, AA.png, etc.)")
@@ -538,7 +500,6 @@ Examples:
                     help="Emotion to use (default: auto-detect from text)")
     ap.add_argument("--emotion_model", default="esracesur/roberta_weighted",
                     help="Hugging Face emotion model")
-    
     # Output settings
     ap.add_argument("--out_dir", type=Path, default=Path("output_tts"),
                     help="Output directory (default: output_tts)")
@@ -617,16 +578,7 @@ Examples:
                 emotion=detected_emotion,
                 lang=args.lang
             )
-        else:
-            # Fallback to other TTS engines
-            generate_speech(
-                text=text,
-                output_path=audio_path,
-                engine=args.tts,
-                lang=args.lang,
-                voice=args.voice,
-                rate=args.rate
-            )
+
     except Exception as e:
         print(f" TTS generation failed: {e}")
         sys.exit(1)

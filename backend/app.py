@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Flask API for EmotiVoice-Avatar Chat Demo
-NOW WITH EMOTION-BASED TTS VOICE SELECTION
 """
 
 from flask import Flask, request, jsonify, send_file, send_from_directory
@@ -21,7 +20,6 @@ from text_to_avatar import classify_emotion, generate_speech
 import logging
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
 
@@ -29,7 +27,7 @@ CORS(app)
 progress = {"value": 0, "stage": "idle"}
 progress_lock = threading.Lock()
 
-# Add after imports
+# Language Detection
 try:
     from langdetect import detect
     HAVE_LANGDETECT = True
@@ -46,16 +44,13 @@ def detect_language(text: str) -> str:
     except:
         return "en"
 
-from pathlib import Path
-import os
-
+# Folder Paths
 BASE_DIR = Path(__file__).parent.parent
 
-# Use /data (persistent and writable on Hugging Face)
+# /data for writability on Hugging Face Spaces
 BASE_DATA = Path(os.getenv("DATA_DIR", "/data"))
 UPLOAD_FOLDER = BASE_DATA / "uploads"
 OUTPUT_FOLDER = BASE_DATA / "outputs"
-
 MOUTH_ROOT = BASE_DIR / "assets" / "mouthsets"
 AVATAR_ROOT = BASE_DIR / "assets" / "avatar"
 LIPSYNC_SCRIPT = Path(__file__).parent / "lipsync.py"
@@ -65,31 +60,10 @@ TEXT_AVATAR_SCRIPT = Path(__file__).parent / "text_to_avatar.py"
 UPLOAD_FOLDER.mkdir(exist_ok=True)
 OUTPUT_FOLDER.mkdir(exist_ok=True)
 
-print("=" * 70)
-print("EmotiVoice-Avatar Backend Server (Audio + Text + Emotion TTS)")
-print("=" * 70)
-print(f"📂 Base directory: {BASE_DIR}")
-print(f"📂 Upload folder: {UPLOAD_FOLDER}")
-print(f"📂 Output folder: {OUTPUT_FOLDER}")
-print(f"📂 Mouthsets: {MOUTH_ROOT}")
-print(f"📜 Lipsync script: {LIPSYNC_SCRIPT}")
-print(f"📜 Text-to-Avatar script: {TEXT_AVATAR_SCRIPT}")
-print("=" * 70)
+print("EmotiVoice-Avatar Backend Server")
 
 # TTS availability check
 TTS_AVAILABLE = {}
-try:
-    from gtts import gTTS
-    TTS_AVAILABLE['gtts'] = True
-except ImportError:
-    TTS_AVAILABLE['gtts'] = False
-
-try:
-    import pyttsx3
-    TTS_AVAILABLE['pyttsx3'] = True
-except ImportError:
-    TTS_AVAILABLE['pyttsx3'] = False
-
 try:
     import edge_tts
     TTS_AVAILABLE['edge'] = True
@@ -97,7 +71,7 @@ except ImportError:
     TTS_AVAILABLE['edge'] = False
 
 print(f" TTS engines available: {[k for k, v in TTS_AVAILABLE.items() if v]}")
-print("=" * 70)
+
 
 # Try to import avatar_composer (optional)
 try:
@@ -149,7 +123,7 @@ def get_tts_engines():
     """Get available TTS engines"""
     return jsonify({
         'available': TTS_AVAILABLE,
-        'default': 'edge' if TTS_AVAILABLE['edge'] else 'gtts' if TTS_AVAILABLE['gtts'] else 'pyttsx3',
+        'default': 'edge' if TTS_AVAILABLE['edge'] else None,
         'voices': {
             'edge': [
                 'en-US-AriaNeural',
@@ -403,7 +377,7 @@ except Exception as e:
             'job_id': job_id,
             'emotion': predicted_emotion,
             'text': text,
-            'tts_engine': 'edge' if use_emotion_voice and TTS_AVAILABLE.get('edge') else tts_engine,
+            'tts_engine': 'edge',
             'emotion_voice_used': use_emotion_voice and TTS_AVAILABLE.get('edge'),
             'video_url': f'/api/video/{job_id}',
             'avatar_config': avatar_config,
@@ -644,17 +618,15 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
-        'mouthsets_available': mouthsets,
         'tts_available': TTS_AVAILABLE,
         'avatar_composer_available': HAS_AVATAR_COMPOSER,
-        'language_detection_available': HAVE_LANGDETECT,  # ADD THIS
-        'emotion_models': {  # ADD THIS
+        'language_detection_available': HAVE_LANGDETECT, 
+        'emotion_models': {  
             'en': 'esracesur/roberta_weighted',
             'tr': 'esracesur/roberta_turkish_emotion_recognition'
         },
         'features': {
-            # ... existing features ...
-            'language_detection': HAVE_LANGDETECT  # ADD THIS
+            'language_detection': HAVE_LANGDETECT  
         }
     })
 
