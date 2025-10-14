@@ -141,8 +141,8 @@ MBP_WEIGHT     = 0.8
 DEFAULT_WEIGHT = 1.0
 ALIGN_STRENGTH = 0.3
 
-MIN_SEG_MS      = 25
-MIN_HOLD_FRAMES = 1
+MIN_SEG_MS      = 40
+MIN_HOLD_FRAMES = 2
 
 # ---------------------------
 # File & image utilities
