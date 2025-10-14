@@ -872,19 +872,21 @@
                     <div class="option-buttons" id="hairStyleOptions">
                         <button class="option-btn" onclick="selectOption('hair_style', 'curly', this)">Curly</button>
                         <button class="option-btn" onclick="selectOption('hair_style', 'short', this)">Short</button>
-                        <button class="option-btn" onclick="selectOption('hair_style', 'straight', this)">Straight</button>
-                        <button class="option-btn selected" onclick="selectOption('hair_style', 'wavy', this)">Wavy</button>
+                        <button class="option-btn selected" onclick="selectOption('hair_style', 'straight', this)">Straight</button>
+                        <button class="option-btn" onclick="selectOption('hair_style', 'wavy', this)">Wavy</button>
                     </div>
                 </div>
 
                 <div class="option-group" id="hairColorGroup">
                     <label class="option-label">Hair Color</label>
                     <div class="option-buttons">
-                        <button class="option-btn" onclick="selectOption('hair_color', 'black', this)">Black</button>
+                        <button class="option-btn selected" onclick="selectOption('hair_color', 'black', this)">Black</button>
                         <button class="option-btn" onclick="selectOption('hair_color', 'blonde', this)">Blonde</button>
                         <button class="option-btn" onclick="selectOption('hair_color', 'blue', this)">Blue</button>
-                        <button class="option-btn selected" onclick="selectOption('hair_color', 'brown', this)">Brown</button>
+                        <button class="option-btn" onclick="selectOption('hair_color', 'brown', this)">Brown</button>
                         <button class="option-btn" onclick="selectOption('hair_color', 'red', this)">Red</button>
+                        <button class="option-btn" onclick="selectOption('hair_color', 'blue', this)">Blue</button>
+                        <button class="option-btn" onclick="selectOption('hair_color', 'orange', this)">Orange</button>
                     </div>
                 </div>
 
@@ -892,8 +894,8 @@
                     <label class="option-label">Eye Color</label>
                     <div class="option-buttons">
                         <button class="option-btn" onclick="selectOption('eye_color', 'black', this)">Black</button>
-                        <button class="option-btn" onclick="selectOption('eye_color', 'blue', this)">Blue</button>
-                        <button class="option-btn selected" onclick="selectOption('eye_color', 'brown', this)">Brown</button>
+                        <button class="option-btn selected" onclick="selectOption('eye_color', 'blue', this)">Blue</button>
+                        <button class="option-btn" onclick="selectOption('eye_color', 'brown', this)">Brown</button>
                         <button class="option-btn" onclick="selectOption('eye_color', 'green', this)">Green</button>
                     </div>
                 </div>
@@ -952,6 +954,10 @@
             // Clear canvas
             ctx.clearRect(0, 0, width, height);
             
+            // White background (removed the bgColor reference)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            
             // Build avatar preview paths
             const gender = avatarConfig.gender;
             const hairStyle = avatarConfig.hair_style;
@@ -972,17 +978,6 @@
                         img.src = src;
                     });
                 };
-                
-                // Background color fill
-                const bgColors = {
-                    'pink': '#fce7f3',
-                    'blue': '#dbeafe',
-                    'green': '#d1fae5',
-                    'purple': '#e9d5ff',
-                    'white': '#ffffff'
-                };
-                ctx.fillStyle = bgColors[bgColor] || '#ffffff';
-                ctx.fillRect(0, 0, width, height);
                 
                 // Build image paths
                 let hairPath;

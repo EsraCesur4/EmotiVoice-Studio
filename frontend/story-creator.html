@@ -221,6 +221,7 @@
             flex: 1;
             position: relative;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
         }
 
         .video-container-draggable {
@@ -741,8 +742,11 @@
                         <div class="option-buttons">
                             <button class="option-btn" onclick="selectOption('hair_color', 'black', this)">Black</button>
                             <button class="option-btn" onclick="selectOption('hair_color', 'blonde', this)">Blonde</button>
-                            <button class="option-btn selected" onclick="selectOption('hair_color', 'brown', this)">Brown</button>
+                            <button class="option-btn" onclick="selectOption('hair_color', 'brown', this)">Brown</button>
+                            <button class="option-btn" onclick="selectOption('hair_color', 'light_brown', this)">Light Brown</button>
                             <button class="option-btn" onclick="selectOption('hair_color', 'red', this)">Red</button>
+                            <button class="option-btn selected" onclick="selectOption('hair_color', 'blue', this)">Blue</button>
+                            <button class="option-btn" onclick="selectOption('hair_color', 'orange', this)">Orange</button>
                         </div>
                     </div>
 
@@ -751,8 +755,8 @@
                         <div class="option-buttons">
                             <button class="option-btn" onclick="selectOption('eye_color', 'black', this)">Black</button>
                             <button class="option-btn" onclick="selectOption('eye_color', 'blue', this)">Blue</button>
-                            <button class="option-btn selected" onclick="selectOption('eye_color', 'brown', this)">Brown</button>
-                            <button class="option-btn" onclick="selectOption('eye_color', 'green', this)">Green</button>
+                            <button class="option-btn" onclick="selectOption('eye_color', 'brown', this)">Brown</button>
+                            <button class="option-btn selected" onclick="selectOption('eye_color', 'green', this)">Green</button>
                         </div>
                     </div>
 
@@ -793,8 +797,8 @@
         const avatarConfig = {
             gender: 'female',
             hair_style: 'wavy',
-            hair_color: 'brown',
-            eye_color: 'brown'
+            hair_color: 'blue',
+            eye_color: 'green'
         };
 
         const hairStyles = {
