@@ -274,7 +274,7 @@ def phone_to_viseme(phone_token: str) -> str:
 
     # IPA / Turkish phones
     b = normalize_phone(phone_token)
-    if any(x in b for x in ["m", "b", "p", "n", "l"]):
+    if any(x in b for x in ["m", "b", "p"]):
         return "M/B/P"
     if any(x in b for x in ["f", "v"]):
         return "F/V"
@@ -650,7 +650,7 @@ def main():
         if len(timeline) > 0:
             prev_end = timeline[-1]["end"]
             gap = w["start"] - prev_end
-            if gap > 0.12:  # silence longer than 120 ms
+            if gap > 0.35:  # silence longer than 120 ms
                 timeline.append({"viseme": "REST", "start": round(prev_end,3), "end": round(w["start"],3), "weight": 0.5})
 
 
@@ -713,8 +713,17 @@ def main():
     energy_norm = (rms - rms.min()) / (rms.max() - rms.min() + 1e-6)
     energy_threshold = 0.15  # Tune this (lower = more motion, higher = more REST)
     for i in range(len(schedule)):
-        if energy_norm[min(i, len(energy_norm)-1)] < energy_threshold:
+        energy_val = energy_norm[min(i, len(energy_norm)-1)]
+        viseme = schedule[i]
+
+        # If low energy → REST
+        if energy_val < energy_threshold and viseme not in {"M/B/P"}:
             schedule[i] = "REST"
+
+        # If vowel → override to open mouth if energy is moderate-high
+        elif energy_val > 0.07 and viseme in {"AA", "IY", "UW"}:
+            schedule[i] = viseme  # force open mouth dominance
+
     # Smooth out rapid flickering (keep viseme for at least 2 frames)
     for i in range(1, len(schedule)):
         if schedule[i] != schedule[i-1]:
