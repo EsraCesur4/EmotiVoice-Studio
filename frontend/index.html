@@ -633,13 +633,7 @@
                                     </select>
                                 </div>
                                 <div class="input-group">
-                                    <label for="hairStyle">Hair Style</label>
-                                    <select id="hairStyle" onchange="updateAvatarPreview()">
-                                        <option value="wavy">Wavy</option>
-                                        <option value="straight">Straight</option>
-                                        <option value="curly">Curly</option>
-                                        <option value="short">Short</option>
-                                    </select>
+                                    <select id="hairStyle" onchange="updateAvatarPreview()"></select>
                                 </div>
                                 <div class="input-group">
                                     <label for="hairColor">Hair Color</label>
@@ -715,6 +709,31 @@
 
     <script>
 let progressTimer = null;
+
+        // ===== Dynamic Hair Style Options by Gender =====
+        const hairStyles = {
+        male: ['curly', 'shaved', 'straight'],
+        female: ['curly', 'short', 'straight', 'wavy']
+        };
+
+        function updateHairStyleOptions(gender) {
+        const hairSelect = document.getElementById('hairStyle');
+        hairSelect.innerHTML = ''; // clear existing options
+
+        hairStyles[gender].forEach(style => {
+            const opt = document.createElement('option');
+            opt.value = style;
+            opt.textContent = style.charAt(0).toUpperCase() + style.slice(1);
+            hairSelect.appendChild(opt);
+        });
+        }
+
+        // When gender changes, rebuild hair options and update preview
+        document.getElementById('gender').addEventListener('change', (e) => {
+        updateHairStyleOptions(e.target.value);
+        updateAvatarPreview();
+        });
+
 
         function startProgressPolling() {
             const bar = document.getElementById('progress-bar');
@@ -864,7 +883,7 @@ let progressTimer = null;
             } else {
                 applyTheme(false);
             }
-            
+            updateHairStyleOptions(document.getElementById('gender').value);
             // Load initial avatar preview
             updateAvatarPreview();
         });

@@ -481,7 +481,7 @@ def process_audio():
         if HAS_AVATAR_COMPOSER:
             set_progress(70, "Rendering frames")
             custom_mouthsets = job_output_dir / "custom_avatar"
-            print(f"🎨 Composing avatar for emotion: {predicted_emotion}")
+            print(f"Composing avatar for emotion: {predicted_emotion}")
             start_compose = time.time()
             try:
                 avatar_composer.compose_single_emotion(
@@ -556,7 +556,7 @@ def process_audio():
             }), 500
         
         set_progress(100, "Complete")
-        print(f"🎬 Video generated (Total duration: {total_duration:.2f}s)")
+        print(f"Video generated (Total duration: {total_duration:.2f}s)")
         
         # Clean up input audio
         try:
@@ -581,7 +581,7 @@ def process_audio():
         
     except subprocess.TimeoutExpired:
         timeout_duration = time.time() - start_total if 'start_total' in locals() else -1
-        print(f"⏱️ Processing timeout (lasted {timeout_duration:.2f}s)")
+        print(f"Processing timeout (lasted {timeout_duration:.2f}s)")
         return jsonify({'error': 'Processing timeout (>5 minutes)'}), 504
     
     except Exception as e:
