@@ -373,7 +373,7 @@
 
         .input-controls {
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             gap: 8px;
         }
 
@@ -406,13 +406,45 @@
             cursor: not-allowed;
         }
 
-        .input-placeholder {
+        .send-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .send-btn:hover:not(:disabled) {
+            box-shadow: 0 6px 14px rgba(52, 152, 219, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .message-input {
             flex: 1;
-            background: #f3f4f6;
-            border-radius: 25px; 
-            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            background: #f9fafb;
             font-size: 15px;
-            color: #95a5a6; 
+            font-family: inherit;
+            resize: none;
+            max-height: 120px;
+            min-height: 44px;
+            padding: 12px 16px;
+            color: #1f2937;
+            border-radius: 22px;
+            transition: all 0.2s;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #3498db;
+            background: white;
+        }
+
+        .message-input::placeholder {
+            color: #9ca3af;
         }
 
         .home-indicator {
@@ -649,204 +681,8 @@
             transform: scale(1.01);
         }
 
-        .tutorial-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .tutorial-overlay.show {
-            display: flex;
-        }
-
-        .tutorial-card {
-            background: white;
-            border-radius: 24px;
-            padding: 32px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            animation: slideUp 0.3s ease-out;
-            position: relative;
-        }
-
-        .tutorial-step {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-
-        .tutorial-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 12px;
-        }
-
-        .tutorial-text {
-            font-size: 16px;
-            color: #6b7280;
-            line-height: 1.6;
-            margin-bottom: 24px;
-        }
-
-        .tutorial-buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .tutorial-btn {
-            flex: 1;
-            padding: 12px 24px;
-            border-radius: 12px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tutorial-btn.skip {
-            background: #f3f4f6;
-            color: #6b7280;
-        }
-
-        .tutorial-btn.skip:hover {
-            background: #e5e7eb;
-        }
-
-        .tutorial-btn.next {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-        }
-
-        .tutorial-btn.next:hover {
-            transform: scale(1.05);
-        }
-
-        .tutorial-progress {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin-bottom: 24px;
-        }
-
-        .progress-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #e5e7eb;
-            transition: all 0.3s;
-        }
-
-        .progress-dot.active {
-            background: #3498db;
-            width: 24px;
-            border-radius: 4px;
-        }
-
-        .video-progress-container {
-            width: 100%;
-            padding: 24px;
-        }
-
-        .progress-steps {
-            margin-bottom: 24px;
-        }
-
-        .progress-step {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-            opacity: 0.4;
-            transition: opacity 0.3s;
-        }
-
-        .progress-step.active {
-            opacity: 1;
-        }
-
-        .progress-step.complete {
-            opacity: 1;
-        }
-
-        .step-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #e5e7eb;
-            flex-shrink: 0;
-            transition: all 0.3s;
-        }
-
-        .progress-step.active .step-icon {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-        }
-
-        .progress-step.complete .step-icon {
-            background: #2ecc71;
-            color: white;
-        }
-
-        .step-icon svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .step-spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid white;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
         @keyframes spin {
             to { transform: rotate(360deg); }
-        }
-
-        .step-text {
-            flex: 1;
-        }
-
-        .step-label {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .step-description {
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 2px;
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 16px;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3498db, #2980b9);
-            border-radius: 4px;
-            transition: width 0.5s ease;
-            width: 0%;
         }
     </style>
 </head>
@@ -885,9 +721,10 @@
 
             <div class="messages-area" id="messagesArea">
                 <div class="message received">
-                    <div class="message-avatar"></div>  <div class="message-content">
+                    <div class="message-avatar"></div>
+                    <div class="message-content">
                         <div class="bubble">
-                            <div class="message-text">Hey! Send me a voice message 🎤</div>
+                            <div class="message-text">Hey! Send me a voice message 🎤 or type something!</div>
                         </div>
                         <div class="timestamp">2:19 PM</div>
                     </div>
@@ -910,10 +747,22 @@
                 </div>
 
                 <div id="inputControls" class="input-controls">
-                    <div class="input-placeholder">Type a message...</div>
-                    <button class="control-btn mic-btn" id="micBtn" onclick="toggleAudioOptions()">
+                    <textarea 
+                        class="message-input" 
+                        id="messageInput" 
+                        placeholder="Type a message..."
+                        rows="1"
+                        onkeypress="handleEnter(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <button class="control-btn mic-btn" id="micBtn" onclick="toggleAudioOptions()" title="Audio options">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                        </svg>
+                    </button>
+                    <button class="control-btn send-btn" id="sendBtn" onclick="sendTextMessage()" title="Send message">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                         </svg>
                     </button>
                 </div>
@@ -1009,20 +858,25 @@
     </div>
 
     <script>
-        // *** ORIGINAL JAVASCRIPT LOGIC RESTORED ***
-
         let mediaRecorder;
         let audioChunks = [];
         let recordingInterval;
         let recordingSeconds = 0;
         let messageCounter = 2;
+        let isProcessing = false;
         
         // Avatar customization state
         let avatarConfig = {
             gender: 'female',
-            hair_style: 'curly',
+            hair_style: 'straight',
             hair_color: 'orange',
-            eye_color: 'green'
+            eye_color: 'brown'
+        };
+
+        // TTS configuration
+        const ttsConfig = {
+            engine: 'edge',
+            voice: 'en-US-AriaNeural'
         };
 
         // Hair style options per gender
@@ -1034,8 +888,79 @@
         // Initialize hair styles on page load
         window.addEventListener('DOMContentLoaded', function() {
             updateHairStyleOptions('female');
-            updateAvatarPreview(); // Show initial preview
+            updateAvatarPreview();
         });
+
+        // Text message handling
+        function handleEnter(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendTextMessage();
+            }
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        async function sendTextMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text || isProcessing) return;
+            
+            isProcessing = true;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('micBtn').disabled = true;
+            
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Show processing indicator
+            showProcessing();
+            
+            try {
+                // Call text-to-avatar pipeline
+                const response = await fetch('/api/process-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        tts_engine: ttsConfig.engine,
+                        tts_voice: ttsConfig.voice,
+                        ...avatarConfig
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const videoUrl = data.video_url ? `${window.location.origin}${data.video_url}` : null;
+                    
+                    hideProcessing();
+                    
+                    // Add sent message with avatar video
+                    addMessage('sent', text, data.emotion, videoUrl, true);
+                } else {
+                    throw new Error(data.error || 'Processing failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                hideProcessing();
+                alert('Failed to generate avatar: ' + error.message);
+                
+                // Still show the message without video as fallback
+                addMessage('sent', text, 'neutral', null, false);
+            } finally {
+                isProcessing = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('micBtn').disabled = false;
+            }
+        }
 
         // Avatar preview function
         async function updateAvatarPreview() {
@@ -1049,34 +974,16 @@
             // Clear canvas
             ctx.clearRect(0, 0, width, height);
             
-            // Build avatar preview URL (backend should serve this)
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            
             const gender = avatarConfig.gender;
             const hairStyle = avatarConfig.hair_style;
             const hairColor = avatarConfig.hair_color;
             const eyeColor = avatarConfig.eye_color;
             
-            // Normalize male eye emotion folder names
-            const eyeEmotion = gender === 'male' ? 'neutral' : 'neutral';
-            
-            // Load layers
-            const layers = [];
-            
             try {
-                // Hair layer (handle shaved case)
-                let hairPath;
-                if (hairStyle === 'shaved') {
-                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/shaved.png`;
-                } else {
-                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/${hairColor}.png`;
-                }
-                
-                // Eyes layer
-                const eyesPath = `/assets/avatar/${gender}/eyes/${eyeEmotion}/${eyeColor}.png`;
-                
-                // Mouth layer (REST for neutral)
-                const mouthPath = `/assets/avatar/${gender}/mouthshapes/neutral/REST.png`;
-                
-                // Load all images
                 const loadImage = (src) => {
                     return new Promise((resolve, reject) => {
                         const img = new Image();
@@ -1084,11 +991,21 @@
                         img.onload = () => resolve(img);
                         img.onerror = () => {
                             console.error('Failed to load:', src);
-                            resolve(null); // Continue even if image fails
+                            resolve(null);
                         };
                         img.src = src;
                     });
                 };
+                
+                let hairPath;
+                if (hairStyle === 'shaved') {
+                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/shaved.png`;
+                } else {
+                    hairPath = `/assets/avatar/${gender}/hair/${hairStyle}/${hairColor}.png`;
+                }
+                
+                const eyesPath = `/assets/avatar/${gender}/eyes/neutral/${eyeColor}.png`;
+                const mouthPath = `/assets/avatar/${gender}/mouthshapes/neutral/REST.png`;
                 
                 const [hairImg, eyesImg, mouthImg] = await Promise.all([
                     loadImage(hairPath),
@@ -1096,16 +1013,14 @@
                     loadImage(mouthPath)
                 ]);
                 
-                // Draw layers in order: hair -> eyes -> mouth
                 if (hairImg) ctx.drawImage(hairImg, 0, 0, width, height);
                 if (eyesImg) ctx.drawImage(eyesImg, 0, 0, width, height);
                 if (mouthImg) ctx.drawImage(mouthImg, 0, 0, width, height);
                 
             } catch (error) {
                 console.error('Error loading avatar preview:', error);
-                // Show error message on canvas
                 ctx.fillStyle = '#6b7280';
-                ctx.font = '14px sans-serif';
+                ctx.font = '16px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('Preview unavailable', width / 2, height / 2);
             }
@@ -1118,7 +1033,6 @@
             const styles = hairStyles[gender];
             styles.forEach((style) => {
                 const btn = document.createElement('button');
-                // Check if this style matches the current avatarConfig
                 btn.className = 'option-btn' + (style === avatarConfig.hair_style ? ' selected' : '');
                 btn.setAttribute('data-value', style);
                 btn.textContent = style.replace('_', ' ');
@@ -1126,9 +1040,8 @@
                 container.appendChild(btn);
             });
             
-            // Only update if current style is not valid for this gender
             if (!styles.includes(avatarConfig.hair_style)) {
-                avatarConfig.hair_style = styles[0]; // or styles[styles.length - 1] for last
+                avatarConfig.hair_style = styles[0];
             }
         }
 
@@ -1147,7 +1060,6 @@
                 updateHairColorVisibility();
             }
             
-            // Update preview when any option changes
             updateAvatarPreview();
             
             console.log('Avatar config updated:', avatarConfig);
@@ -1173,6 +1085,16 @@
 
         function saveCustomization() {
             closeCustomization();
+            
+            // Show confirmation in chat
+            const messagesArea = document.getElementById('messagesArea');
+            const notification = document.createElement('div');
+            notification.style.cssText = 'text-align: center; padding: 10px; background: #d1fae5; color: #065f46; border-radius: 12px; margin-bottom: 16px; font-size: 13px; font-weight: 600;';
+            notification.textContent = '✓ Avatar settings saved!';
+            messagesArea.appendChild(notification);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+            
+            setTimeout(() => notification.remove(), 3000);
         }
         
         function toggleAudioOptions() {
@@ -1259,6 +1181,7 @@
             
             showProcessing();
             document.getElementById('micBtn').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
 
             const formData = new FormData();
             formData.append('audio', audioBlob, 'recording.webm');
@@ -1287,6 +1210,7 @@
                 
                 hideProcessing();
                 document.getElementById('micBtn').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
                 
                 const videoUrl = data.video_url
                 ? `${window.location.origin}${data.video_url}`
@@ -1310,6 +1234,7 @@
                 console.error('Error:', error);
                 hideProcessing();
                 document.getElementById('micBtn').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
                 alert('Failed to process audio: ' + error.message);
             });
         }
@@ -1326,7 +1251,7 @@
                         <div class="dot"></div>
                         <div class="dot"></div>
                     </div>
-                    <span>Analyzing...</span>
+                    <span>Generating avatar...</span>
                 </div>
             `;
             messagesArea.appendChild(processingDiv);
@@ -1352,11 +1277,11 @@
             
             let content = '';
             
-            if (videoUrl) {
+            if (videoUrl && hasVideo) {
                 console.log('Adding video to message:', videoUrl);
                 content = `
                     <div class="video-container">
-                        <video controls preload="metadata">
+                        <video controls preload="metadata" playsinline>
                             <source src="${videoUrl}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
@@ -1379,6 +1304,12 @@
             messagesArea.appendChild(messageDiv);
             messagesArea.scrollTop = messagesArea.scrollHeight;
             messageCounter++;
+            
+            // Auto-play the video once it's added to DOM
+            const video = messageDiv.querySelector('video');
+            if (video) {
+                video.play().catch(err => console.log('Video autoplay prevented:', err));
+            }
         }
     </script>
 </body>
