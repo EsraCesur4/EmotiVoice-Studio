@@ -210,6 +210,7 @@ try:
         engine="edge",
         emotion="{predicted_emotion}",
         lang="{detected_language}"
+        gender="{avatar_config.get('gender', 'female')}"
     )
     print("TTS_SUCCESS")
 except Exception as e:
