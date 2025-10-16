@@ -209,7 +209,7 @@ try:
         output_path=Path(r"{audio_path}"),
         engine="edge",
         emotion="{predicted_emotion}",
-        lang="{detected_language}"
+        lang="{detected_language}",
         gender="{avatar_config.get('gender', 'female')}"
     )
     print("TTS_SUCCESS")
