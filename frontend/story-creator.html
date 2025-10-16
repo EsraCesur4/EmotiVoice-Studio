@@ -997,9 +997,9 @@
             formData.append('eye_color', avatarConfig.eye_color);
 
             try {
-                const response = await fetch('/api/process-text', {
+                const response = await fetch('/api/process-audio', {  // Burayı değiştirin
                     method: 'POST',
-                    body: formData
+                    body: formData  // Content-Type header'ı eklemeyin, FormData otomatik ayarlar
                 });
 
                 const data = await response.json();
