@@ -831,12 +831,11 @@
                 <div class="option-group">
                     <label class="option-label">TTS Engine</label>
                     <select class="form-select" id="ttsEngine">
-                        <option value="auto" selected>Auto (Best Available with Fallback)</option>
-                        <option value="edge">Edge-TTS (High Quality, Requires Internet)</option>
-                        <option value="gtts">Google TTS (Simple, Requires Internet)</option>
-                        <option value="pyttsx3">Pyttsx3 (Offline, Lower Quality)</option>
+                        <option value="auto">Auto (Best Available)</option>
+                        <option value="edge" selected>Edge-TTS (High Quality)</option>
+                        <option value="gtts">Google TTS (Simple)</option>
+                        <option value="pyttsx3">Pyttsx3 (Offline)</option>
                     </select>
-                    <div id="ttsEngineStatus" style="margin-top: 8px; font-size: 12px; color: #6b7280;"></div>
                 </div>
 
                 <div class="option-group">
@@ -1073,62 +1072,7 @@
         // Initialize on load
         window.addEventListener('DOMContentLoaded', function() {
             updateHairStyleOptions('female');
-            loadTTSEngines();
         });
-
-                // Load available TTS engines from backend
-        async function loadTTSEngines() {
-            try {
-                const response = await fetch('/api/tts/engines');
-                const data = await response.json();
-                
-                const statusDiv = document.getElementById('ttsEngineStatus');
-                const engineSelect = document.getElementById('ttsEngine');
-                
-                // Update engine availability status
-                let availableEngines = [];
-                let unavailableEngines = [];
-                
-                if (data.available) {
-                    Object.entries(data.available).forEach(([engine, isAvailable]) => {
-                        if (isAvailable) {
-                            availableEngines.push(engine);
-                        } else {
-                            unavailableEngines.push(engine);
-                        }
-                    });
-                }
-                
-                // Update status text
-                if (availableEngines.length > 0) {
-                    statusDiv.innerHTML = `✓ Available: ${availableEngines.join(', ')}`;
-                    statusDiv.style.color = '#10b981';
-                } else {
-                    statusDiv.innerHTML = `⚠️ No TTS engines available`;
-                    statusDiv.style.color = '#ef4444';
-                }
-                
-                // Disable unavailable options
-                const options = engineSelect.querySelectorAll('option');
-                options.forEach(option => {
-                    const engine = option.value;
-                    if (engine !== 'auto' && !data.available[engine]) {
-                        option.disabled = true;
-                        option.textContent += ' (Not Available)';
-                    }
-                });
-                
-                // Show emotion-based voice info if available
-                if (data.emotion_based) {
-                    const voiceSelect = document.getElementById('ttsVoice');
-                    const voiceLabel = voiceSelect.previousElementSibling;
-                    voiceLabel.innerHTML = 'Voice Selection <span style="color: #10b981; font-size: 11px;">(Emotion-based available)</span>';
-                }
-                
-            } catch (error) {
-                console.error('Failed to load TTS engines:', error);
-            }
-        }
 
         function handleEnter(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
