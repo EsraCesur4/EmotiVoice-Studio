@@ -359,30 +359,17 @@ def generate_speech_pyttsx3(text: str, output_path: Path, rate: int = 150, gende
         raise
 
 
-def generate_speech_gtts(text: str, output_path: Path, lang: str = 'en', gender: str = 'female') -> None:
+def generate_speech_gtts(text: str, output_path: Path, lang: str = 'en') -> None:
     """Generate speech using Google TTS (requires internet, simple)"""
-    print(f"Using Google TTS (lang={lang}, gender={gender})...")
+    print(f"Using Google TTS (lang={lang})...")
     
     try:
-        # Map language codes
-        if lang.startswith('tr'):
-            tld = 'com.tr'  # Turkish domain for more natural Turkish voice
-            lang_code = 'tr'
-        else:
-            # For English, use different domains for slight voice variation
-            if gender == 'male':
-                tld = 'co.uk'  # UK English tends to sound slightly different
-            else:
-                tld = 'com'  # US English
-            lang_code = 'en'
-        
-        tts = gTTS(text=text, lang=lang_code, tld=tld, slow=False)
+        tts = gTTS(text=text, lang=lang, slow=False)
         tts.save(str(output_path))
-        print(f"✓ Google TTS audio saved: {output_path}")
-        print(f"⚠️ Note: Google TTS has limited voice variety. Gender selection may not be noticeable.")
+        print(f" Google TTS audio saved: {output_path}")
         
     except Exception as e:
-        print(f"❌ Google TTS failed: {e}")
+        print(f" Google TTS failed: {e}")
         raise
 
 def generate_speech(
@@ -447,14 +434,13 @@ def generate_speech(
                     continue
                     
                 lang = kwargs.get('lang', 'en')
-                gender = kwargs.get('gender', 'female')
                 # Map language codes
                 if lang.startswith('tr'):
                     lang = 'tr'
                 elif lang.startswith('en'):
                     lang = 'en'
                     
-                generate_speech_gtts(text, output_path, lang, gender)
+                generate_speech_gtts(text, output_path, lang)
                 return  # Success!
                 
             elif try_engine == 'pyttsx3':
@@ -463,8 +449,7 @@ def generate_speech(
                     
                 rate = kwargs.get('rate', 150)
                 gender = kwargs.get('gender', 'female')
-                lang = kwargs.get('lang', 'en')
-                generate_speech_pyttsx3(text, output_path, rate, gender, lang)
+                generate_speech_pyttsx3(text, output_path, rate, gender)
                 return  # Success!
                 
         except Exception as e:
@@ -485,7 +470,7 @@ def generate_speech(
     else:
         raise RuntimeError("No TTS engine available")
     
-
+    
 def run_lipsync_pipeline(
     audio_path: Path,
     mouths_dir: Path,
