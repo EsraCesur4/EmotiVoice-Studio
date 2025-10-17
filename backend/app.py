@@ -66,9 +66,22 @@ print("EmotiVoice-Avatar Backend Server")
 TTS_AVAILABLE = {}
 try:
     import edge_tts
+    import asyncio
     TTS_AVAILABLE['edge'] = True
 except ImportError:
     TTS_AVAILABLE['edge'] = False
+
+try:
+    import pyttsx3
+    TTS_AVAILABLE['pyttsx3'] = True
+except ImportError:
+    TTS_AVAILABLE['pyttsx3'] = False
+
+try:
+    from gtts import gTTS
+    TTS_AVAILABLE['gtts'] = True
+except ImportError:
+    TTS_AVAILABLE['gtts'] = False
 
 print(f" TTS engines available: {[k for k, v in TTS_AVAILABLE.items() if v]}")
 
@@ -198,19 +211,27 @@ def process_text():
         temp_tts_script = job_output_dir / "temp_tts.py"
         
         # Build TTS script with emotion support
+        # Build TTS script with emotion support
         if use_emotion_voice and TTS_AVAILABLE.get('edge'):
             tts_script_content = f'''import sys
 from pathlib import Path
 sys.path.insert(0, r"{Path(__file__).parent}")
 from text_to_avatar import generate_speech
+
+text = """{text}"""
+output_path = Path(r"{audio_path}")
+emotion = "{predicted_emotion}"
+language = "{detected_language}"
+gender = "{avatar_config.get('gender', 'female')}"
+
 try:
     generate_speech(
-        text="""{text}""",
-        output_path=Path(r"{audio_path}"),
+        text=text,
+        output_path=output_path,
         engine="edge",
-        emotion="{predicted_emotion}",
-        lang="{detected_language}",
-        gender="{avatar_config.get('gender', 'female')}"
+        emotion=emotion,
+        lang=language,
+        gender=gender
     )
     print("TTS_SUCCESS")
 except Exception as e:
@@ -357,14 +378,29 @@ except Exception as e:
                 }
             }), 500
         
-        print(f"Video generated (Total duration: {total_duration:.2f}s)")
+        print(f"✅ Video generated (Total duration: {total_duration:.2f}s)")
+        
+        # Detect which TTS engine was used by checking the stdout
+        tts_engine_used = tts_engine if tts_engine != 'auto' else 'edge'
+        tts_fallback = False
+        
+        if "Using offline TTS (pyttsx3)" in tts_result.stdout:
+            tts_engine_used = 'pyttsx3'
+            tts_fallback = True
+        elif "Using Google TTS" in tts_result.stdout:
+            tts_engine_used = 'gtts'
+            tts_fallback = True
+        elif "trying fallback" in tts_result.stdout:
+            tts_fallback = True
         
         return jsonify({
             'success': True,
             'job_id': job_id,
             'emotion': predicted_emotion,
             'text': text,
-            'tts_engine': 'edge',
+            'tts_engine': tts_engine,
+            'tts_engine_used': tts_engine_used,
+            'tts_fallback': tts_fallback,
             'emotion_voice_used': use_emotion_voice and TTS_AVAILABLE.get('edge'),
             'video_url': f'/api/video/{job_id}',
             'avatar_config': avatar_config,
@@ -374,7 +410,7 @@ except Exception as e:
                 'avatar_compose_s': f"{mouth_composition_duration:.2f}",
                 'pipeline_s': f"{pipeline_duration:.2f}"
             }
-        })
+        }) 
         
     except subprocess.TimeoutExpired:
         timeout_duration = time.time() - start_total if 'start_total' in locals() else -1
@@ -605,6 +641,7 @@ def health_check():
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
         'tts_available': TTS_AVAILABLE,
+        'tts_priority': ['edge', 'gtts', 'pyttsx3'],
         'avatar_composer_available': HAS_AVATAR_COMPOSER,
         'language_detection_available': HAVE_LANGDETECT, 
         'emotion_models': {  
@@ -612,7 +649,8 @@ def health_check():
             'tr': 'esracesur/roberta_turkish_emotion_recognition'
         },
         'features': {
-            'language_detection': HAVE_LANGDETECT  
+            'language_detection': HAVE_LANGDETECT,
+            'fallback_tts': TTS_AVAILABLE.get('pyttsx3') or TTS_AVAILABLE.get('gtts')
         }
     })
 

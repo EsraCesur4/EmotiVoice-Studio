@@ -42,6 +42,18 @@ try:
 except ImportError:
     TTS_AVAILABLE['edge'] = False
 
+try:
+    import pyttsx3
+    TTS_AVAILABLE['pyttsx3'] = True
+except ImportError:
+    TTS_AVAILABLE['pyttsx3'] = False
+
+try:
+    from gtts import gTTS
+    TTS_AVAILABLE['gtts'] = True
+except ImportError:
+    TTS_AVAILABLE['gtts'] = False
+
 # Emotion detection
 try:
     import torch
@@ -216,23 +228,27 @@ def classify_emotion(text: str, model_name: str = None, language: str = None) ->
 
 
 def get_emotion_voice_config(emotion: str, language: str = "en", gender: str = "female") -> dict:
-    """
-    Get voice configuration for a specific emotion and language
-    
-    Args:
-        emotion: Detected emotion (anger, joy, sadness, etc.)
-        language: Language code ('en' or 'tr')
-    
-    Returns:
-        Dictionary with voice, rate, pitch, and style settings
-    """
     lang_key = "tr" if language.startswith("tr") else "en"
     
     # Get emotion config or fall back to neutral
     emotion_config = EMOTION_VOICE_MAP[lang_key].get(
         emotion, 
         EMOTION_VOICE_MAP[lang_key]["neutral"]
-    )
+    ).copy()  # IMPORTANT: Make a copy to avoid modifying the original
+
+    # Override voice based on gender
+    if lang_key == "tr":
+        if gender == "male":
+            emotion_config["voice"] = "tr-TR-AhmetNeural"
+        else:
+            emotion_config["voice"] = "tr-TR-EmelNeural"
+    elif lang_key == "en":
+        if gender == "male":
+            emotion_config["voice"] = "en-US-GuyNeural"
+        else:
+            emotion_config["voice"] = "en-US-AriaNeural"
+    
+    return emotion_config
 
     # Override voice based on gender
     if lang_key == "tr":
@@ -276,6 +292,9 @@ async def generate_speech_edge_emotion_async(
     print(f" Emotional speech saved: {output_path}")
 
 
+
+
+
 def generate_speech_edge_emotion(
     text: str, 
     output_path: Path, 
@@ -298,6 +317,61 @@ def generate_speech_edge(text: str, output_path: Path, voice: str = "en-US-AriaN
     asyncio.run(generate_speech_edge_async(text, output_path, voice))
 
 
+def generate_speech_pyttsx3(text: str, output_path: Path, rate: int = 150, gender: str = "female") -> None:
+    """Generate speech using pyttsx3 (offline, works everywhere)"""
+    print(f" Using offline TTS (pyttsx3)...")
+    
+    try:
+        engine = pyttsx3.init()
+        
+        # Set properties
+        engine.setProperty('rate', rate)
+        
+        # Try to select voice based on gender
+        voices = engine.getProperty('voices')
+        if voices:
+            # Try to find a voice matching the gender
+            target_voice = None
+            gender_lower = gender.lower()
+            
+            for voice in voices:
+                voice_name = voice.name.lower()
+                # Simple heuristic: look for male/female indicators
+                if gender_lower == "female" and any(x in voice_name for x in ["female", "woman", "zira", "hazel"]):
+                    target_voice = voice.id
+                    break
+                elif gender_lower == "male" and any(x in voice_name for x in ["male", "man", "david", "mark"]):
+                    target_voice = voice.id
+                    break
+            
+            # If found a matching voice, use it; otherwise use first available
+            if target_voice:
+                engine.setProperty('voice', target_voice)
+            elif voices:
+                engine.setProperty('voice', voices[0].id)
+        
+        engine.save_to_file(text, str(output_path))
+        engine.runAndWait()
+        print(f" Offline audio saved: {output_path}")
+        
+    except Exception as e:
+        print(f" pyttsx3 failed: {e}")
+        raise
+
+
+def generate_speech_gtts(text: str, output_path: Path, lang: str = 'en') -> None:
+    """Generate speech using Google TTS (requires internet, simple)"""
+    print(f"Using Google TTS (lang={lang})...")
+    
+    try:
+        tts = gTTS(text=text, lang=lang, slow=False)
+        tts.save(str(output_path))
+        print(f" Google TTS audio saved: {output_path}")
+        
+    except Exception as e:
+        print(f" Google TTS failed: {e}")
+        raise
+
 def generate_speech(
     text: str, 
     output_path: Path, 
@@ -306,12 +380,12 @@ def generate_speech(
     **kwargs
 ) -> None:
     """
-    Generate speech from text using specified TTS engine
+    Generate speech from text using specified TTS engine with automatic fallback
     
     Args:
         text: Input text to synthesize
         output_path: Where to save audio file
-        engine: TTS engine ('auto', 'gtts', 'pyttsx3', 'edge')
+        engine: TTS engine ('auto', 'edge', 'gtts', 'pyttsx3')
         emotion: Emotion for voice selection (only for Edge-TTS)
         **kwargs: Engine-specific parameters
     """
@@ -319,40 +393,84 @@ def generate_speech(
     if engine == "auto":
         if TTS_AVAILABLE.get('edge'):
             engine = 'edge'
+        elif TTS_AVAILABLE.get('gtts'):
+            engine = 'gtts'
+        elif TTS_AVAILABLE.get('pyttsx3'):
+            engine = 'pyttsx3'
         else:
             raise RuntimeError("No TTS engine available. Install: pip install gtts pyttsx3 edge-tts")
     
-    # Generate speech with selected engine
-    if engine == 'gtts':
-        if not TTS_AVAILABLE.get('gtts'):
-            raise RuntimeError("gTTS not available. Install: pip install gtts")
-        lang = kwargs.get('lang', 'en')
-        generate_speech_gtts(text, output_path, lang)
+    # Try primary engine with fallback
+    engines_to_try = [engine]
     
-    elif engine == 'pyttsx3':
-        if not TTS_AVAILABLE.get('pyttsx3'):
-            raise RuntimeError("pyttsx3 not available. Install: pip install pyttsx3")
-        rate = kwargs.get('rate', 150)
-        generate_speech_pyttsx3(text, output_path, rate)
+    # Add fallback engines if primary fails
+    if engine == 'edge':
+        if TTS_AVAILABLE.get('gtts'):
+            engines_to_try.append('gtts')
+        if TTS_AVAILABLE.get('pyttsx3'):
+            engines_to_try.append('pyttsx3')
     
-    elif engine == 'edge':
-        if not TTS_AVAILABLE.get('edge'):
-            raise RuntimeError("edge-tts not available. Install: pip install edge-tts")
-        
-        # Use emotion-based voice if emotion is provided
-        if emotion and emotion != "neutral":
-            language = kwargs.get('lang', 'en')
-            gender = kwargs.get('gender', 'female')  # Ekle
-            generate_speech_edge_emotion(text, output_path, emotion, language, gender)
-        else:
-            # use manual voice selection
-            voice = kwargs.get('voice', 'en-US-AriaNeural')
-            generate_speech_edge(text, output_path, voice)
+    last_error = None
     
+    for try_engine in engines_to_try:
+        try:
+            if try_engine == 'edge':
+                if not TTS_AVAILABLE.get('edge'):
+                    continue
+                
+                # Use emotion-based voice if emotion is provided
+                if emotion and emotion != "neutral":
+                    language = kwargs.get('lang', 'en')
+                    gender = kwargs.get('gender', 'female')
+                    generate_speech_edge_emotion(text, output_path, emotion, language, gender)
+                else:
+                    voice = kwargs.get('voice', 'en-US-AriaNeural')
+                    generate_speech_edge(text, output_path, voice)
+                
+                return  # Success!
+                
+            elif try_engine == 'gtts':
+                if not TTS_AVAILABLE.get('gtts'):
+                    continue
+                    
+                lang = kwargs.get('lang', 'en')
+                # Map language codes
+                if lang.startswith('tr'):
+                    lang = 'tr'
+                elif lang.startswith('en'):
+                    lang = 'en'
+                    
+                generate_speech_gtts(text, output_path, lang)
+                return  # Success!
+                
+            elif try_engine == 'pyttsx3':
+                if not TTS_AVAILABLE.get('pyttsx3'):
+                    continue
+                    
+                rate = kwargs.get('rate', 150)
+                gender = kwargs.get('gender', 'female')
+                generate_speech_pyttsx3(text, output_path, rate, gender)
+                return  # Success!
+                
+        except Exception as e:
+            last_error = e
+            error_msg = str(e)
+            
+            # Check if it's a network error
+            if "Network is unreachable" in error_msg or "Cannot connect" in error_msg:
+                print(f"⚠️ {try_engine} failed (network error), trying fallback...")
+            else:
+                print(f"⚠️ {try_engine} failed: {e}, trying fallback...")
+            
+            continue
+    
+    # If all engines failed
+    if last_error:
+        raise RuntimeError(f"All TTS engines failed. Last error: {last_error}")
     else:
-        raise ValueError(f"Unknown TTS engine: {engine}. Use 'gtts', 'pyttsx3', 'edge', or 'auto'")
-
-
+        raise RuntimeError("No TTS engine available")
+    
+    
 def run_lipsync_pipeline(
     audio_path: Path,
     mouths_dir: Path,

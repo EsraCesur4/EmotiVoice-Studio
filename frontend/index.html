@@ -588,6 +588,16 @@
                         </button>
                         <div class="section-content open">
                             <div class="input-group">
+                                <label for="ttsEngine">TTS Engine</label>
+                                <select id="ttsEngine" onchange="updateTTSEngineInfo()">
+                                    <option value="auto" selected>Auto (Best Available with Fallback)</option>
+                                    <option value="edge">Edge-TTS (High Quality, Requires Internet)</option>
+                                    <option value="gtts">Google TTS (Simple, Requires Internet)</option>
+                                    <option value="pyttsx3">Pyttsx3 (Offline, Lower Quality)</option>
+                                </select>
+                                <div id="ttsEngineStatus" style="margin-top: 8px; font-size: 12px; color: var(--text-gray);"></div>
+                            </div>
+                            <div class="input-group" id="voiceSelectionGroup">
                                 <label for="ttsVoice">Voice Selection</label>
                                 <select id="ttsVoice">
                                     <option value="en-US-AriaNeural">🇺🇸 Aria (Female)</option>
@@ -887,8 +897,77 @@ let progressTimer = null;
             updateHairStyleOptions(document.getElementById('gender').value);
             // Load initial avatar preview
             updateAvatarPreview();
+            // Load TTS engines
+            loadTTSEngines();
         });
 
+        // Load available TTS engines from backend
+        async function loadTTSEngines() {
+            try {
+                const response = await fetch('/api/tts/engines');
+                const data = await response.json();
+                
+                const statusDiv = document.getElementById('ttsEngineStatus');
+                const engineSelect = document.getElementById('ttsEngine');
+                
+                // Update engine availability status
+                let availableEngines = [];
+                let unavailableEngines = [];
+                
+                if (data.available) {
+                    Object.entries(data.available).forEach(([engine, isAvailable]) => {
+                        if (isAvailable) {
+                            availableEngines.push(engine);
+                        } else {
+                            unavailableEngines.push(engine);
+                        }
+                    });
+                }
+                
+                // Update status text
+                if (availableEngines.length > 0) {
+                    statusDiv.innerHTML = `✓ Available: ${availableEngines.join(', ')}`;
+                    statusDiv.style.color = 'var(--success)';
+                } else {
+                    statusDiv.innerHTML = `⚠️ No TTS engines available`;
+                    statusDiv.style.color = 'var(--danger)';
+                }
+                
+                // Disable unavailable options
+                const options = engineSelect.querySelectorAll('option');
+                options.forEach(option => {
+                    const engine = option.value;
+                    if (engine !== 'auto' && !data.available[engine]) {
+                        option.disabled = true;
+                        option.textContent += ' (Not Available)';
+                    }
+                });
+                
+                // Show emotion-based voice info if available
+                if (data.emotion_based) {
+                    const voiceLabel = document.querySelector('label[for="ttsVoice"]');
+                    if (voiceLabel) {
+                        voiceLabel.innerHTML = 'Voice Selection <span style="color: var(--success); font-size: 11px;">(Emotion-based available)</span>';
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Failed to load TTS engines:', error);
+            }
+        }
+
+        function updateTTSEngineInfo() {
+            const engine = document.getElementById('ttsEngine').value;
+            const voiceGroup = document.getElementById('voiceSelectionGroup');
+            
+            // Show/hide voice selection based on engine
+            if (engine === 'edge' || engine === 'auto') {
+                voiceGroup.style.display = 'block';
+            } else {
+                voiceGroup.style.display = 'none';
+            }
+        }
+        
         function handleFileSelect(input) {
             const fileInfo = document.getElementById('file-info');
             const sampleInfo = document.getElementById('sample-selected-info');
@@ -1095,7 +1174,7 @@ let progressTimer = null;
                     
                     const payload = {
                         text: text,
-                        tts_engine: 'edge',
+                        tts_engine: document.getElementById('ttsEngine').value,
                         tts_voice: document.getElementById('ttsVoice').value,
                         gender: document.getElementById('gender').value,
                         hair_style: document.getElementById('hairStyle').value,
@@ -1121,7 +1200,16 @@ let progressTimer = null;
                 }
                 
                 hideSpinner();
-                showStatus('Video generated successfully!', 'success');
+                
+                // Show TTS engine info if fallback was used
+                let successMsg = 'Video generated successfully!';
+                if (data.tts_engine_used && data.tts_fallback) {
+                    successMsg += ` (TTS: ${data.tts_engine_used} - fallback used)`;
+                } else if (data.tts_engine_used) {
+                    successMsg += ` (TTS: ${data.tts_engine_used})`;
+                }
+                
+                showStatus(successMsg, 'success');
                 showVideo(data.video_url, data.emotion);
                 
             } catch (error) {
