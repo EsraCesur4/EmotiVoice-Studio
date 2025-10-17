@@ -168,8 +168,14 @@ def process_text():
         
         # Get TTS settings
         tts_engine = data.get('tts_engine', 'auto')
-        tts_lang = data.get('tts_lang', 'en')
+        tts_voice = data.get('tts_voice', 'en-US-AriaNeural')
         use_emotion_voice = data.get('use_emotion_voice', True)  # NEW: Enable emotion-based voice
+        
+        # If user selected a specific non-auto engine, respect that choice
+        if tts_engine in ['gtts', 'pyttsx3']:
+            use_emotion_voice = False  # Don't use emotion voice for non-Edge engines
+        
+        # Get avatar configuration
         
         # Get avatar configuration
         avatar_config = {
@@ -201,18 +207,18 @@ def process_text():
             print(f" Emotion detection failed: {e}, using neutral")
             predicted_emotion = "neutral"
         
-        # Generate audio from text using EMOTION-BASED TTS
+        # Generate audio from text using TTS
         audio_path = job_output_dir / "tts_speech.wav"
-        print(f"Generating speech...")
+        print(f"Generating speech with engine: {tts_engine}...")
         
         start_tts = time.time()
         
         # Create a temporary Python script for TTS generation
         temp_tts_script = job_output_dir / "temp_tts.py"
         
-        # Build TTS script with emotion support
-        # Build TTS script with emotion support
-        if use_emotion_voice and TTS_AVAILABLE.get('edge'):
+        # Build TTS script based on selected engine and emotion support
+        if tts_engine == 'auto' or (tts_engine == 'edge' and use_emotion_voice):
+            # Use emotion-based voice selection
             tts_script_content = f'''import sys
 from pathlib import Path
 sys.path.insert(0, r"{Path(__file__).parent}")
@@ -228,7 +234,7 @@ try:
     generate_speech(
         text=text,
         output_path=output_path,
-        engine="edge",
+        engine="{tts_engine}",
         emotion=emotion,
         lang=language,
         gender=gender
@@ -241,18 +247,27 @@ except Exception as e:
     sys.exit(1)
 '''
         else:
-            # Fallback to non-emotion TTS
+            # Use manual voice/engine selection (no emotion)
             tts_script_content = f'''import sys
 from pathlib import Path
 sys.path.insert(0, r"{Path(__file__).parent}")
 from text_to_avatar import generate_speech
+
+text = """{text}"""
+output_path = Path(r"{audio_path}")
+engine = "{tts_engine}"
+language = "{detected_language}"
+gender = "{avatar_config.get('gender', 'female')}"
+voice = "{tts_voice}"
+
 try:
     generate_speech(
-        text="""{text}""",
-        output_path=Path(r"{audio_path}"),
-        engine="{tts_engine}",
-        lang="{detected_language}",
-        gender="{avatar_config.get('gender', 'female')}"
+        text=text,
+        output_path=output_path,
+        engine=engine,
+        lang=language,
+        gender=gender,
+        voice=voice
     )
     print("TTS_SUCCESS")
 except Exception as e:

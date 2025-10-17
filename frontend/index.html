@@ -597,16 +597,14 @@
                                 </select>
                                 <div id="ttsEngineStatus" style="margin-top: 8px; font-size: 12px; color: var(--text-gray);"></div>
                             </div>
-                            <div class="input-group" id="voiceSelectionGroup">
-                                <label for="ttsVoice">Voice Selection <span style="font-size: 11px; color: var(--text-gray);">(Edge-TTS only)</span></label>
-                                <select id="ttsVoice">
-                                    <option value="en-US-AriaNeural">🇺🇸 Aria (Female)</option>
-                                    <option value="en-US-GuyNeural">🇺🇸 Guy (Male)</option>
-                                    <option value="tr-TR-EmelNeural">🇹🇷 Emel (Female)</option>
-                                    <option value="tr-TR-AhmetNeural">🇹🇷 Ahmet (Male)</option>
-                                </select>
-                                <div style="font-size: 11px; color: var(--text-gray); margin-top: 4px;">
-                                    💡 For emotion-based voices, select gender in Avatar Customization below
+                            
+                            <div class="input-group" id="emotionVoiceToggle" style="display: none;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="useEmotionVoice" checked onchange="updateTTSEngineInfo()" style="cursor: pointer;">
+                                    <span>Use emotion-based voice selection</span>
+                                </label>
+                                <div style="font-size: 11px; color: var(--text-gray); margin-top: 4px; margin-left: 24px;">
+                                    When enabled, voice is automatically selected based on detected emotion and gender
                                 </div>
                             </div>
                         </div>
@@ -962,22 +960,31 @@ let progressTimer = null;
        function updateTTSEngineInfo() {
             const engine = document.getElementById('ttsEngine').value;
             const voiceGroup = document.getElementById('voiceSelectionGroup');
+            const emotionToggle = document.getElementById('emotionVoiceToggle');
+            const useEmotionVoice = document.getElementById('useEmotionVoice');
             const statusDiv = document.getElementById('ttsEngineStatus');
             
-            // Show/hide voice selection based on engine
-            if (engine === 'edge') {
-                voiceGroup.style.display = 'block';
-                statusDiv.innerHTML = '💡 Voice selection available for Edge-TTS. Gender from Avatar Customization will override for emotion-based voices.';
-                statusDiv.style.color = 'var(--primary)';
-            } else if (engine === 'auto') {
-                voiceGroup.style.display = 'block';
-                statusDiv.innerHTML = '💡 Will try Edge-TTS first (with emotion-based voices), then fallback to other engines. Gender is controlled in Avatar Customization.';
-                statusDiv.style.color = 'var(--primary)';
+            // Show emotion toggle only for edge/auto
+            if (engine === 'edge' || engine === 'auto') {
+                emotionToggle.style.display = 'block';
+                
+                // Show/hide voice selection based on emotion toggle
+                if (useEmotionVoice && useEmotionVoice.checked) {
+                    voiceGroup.style.display = 'none';
+                    statusDiv.innerHTML = '🎭 Emotion-based voices enabled. Voice will be selected automatically based on detected emotion and gender.';
+                    statusDiv.style.color = 'var(--primary)';
+                } else {
+                    voiceGroup.style.display = 'block';
+                    statusDiv.innerHTML = '🎤 Manual voice selection mode. Choose your preferred voice from the dropdown below.';
+                    statusDiv.style.color = 'var(--primary)';
+                }
             } else if (engine === 'gtts') {
+                emotionToggle.style.display = 'none';
                 voiceGroup.style.display = 'none';
                 statusDiv.innerHTML = 'ℹ️ Google TTS uses language auto-detection. No voice selection needed.';
                 statusDiv.style.color = 'var(--text-gray)';
             } else if (engine === 'pyttsx3') {
+                emotionToggle.style.display = 'none';
                 voiceGroup.style.display = 'none';
                 statusDiv.innerHTML = 'ℹ️ Pyttsx3 uses system voices. Gender from Avatar Customization will be used.';
                 statusDiv.style.color = 'var(--text-gray)';
@@ -1192,6 +1199,7 @@ let progressTimer = null;
                         text: text,
                         tts_engine: document.getElementById('ttsEngine').value,
                         tts_voice: document.getElementById('ttsVoice').value,
+                        use_emotion_voice: document.getElementById('useEmotionVoice')?.checked ?? true,
                         gender: document.getElementById('gender').value,
                         hair_style: document.getElementById('hairStyle').value,
                         hair_color: document.getElementById('hairColor').value,
