@@ -1,5 +1,8 @@
 <h1 align="center">EmotiVoice Studio</h1>
 
+
+![logo](Documentation/logo/logo_large.png)
+
 <h2 align="left"> 1. Proje Tanımı</h2>
 
 EmotiVoice Studio, metin veya ses girdilerini kullanarak, girdinin duygusal içeriğini analiz eden ve bu duyguya uygun şekilde ifade, ses tonu ve yüz hareketi üreten bir yapay zekâ tabanlı konuşan avatar sistemidir.   
@@ -15,7 +18,7 @@ Bu süreç sonunda duygusal olarak ifade eden bir avatar videosu elde edilir.
 <h3 align="left"> Sistem Mimarisi</h3>
 Uygulama, istemci-tabanlı bir arayüz (frontend) ile Flask tabanlı bir sunucu (backend) mimarisi üzerinde çalışır.   
 
-<img width="5481" height="1569" alt="QR kodu (9)" src="https://github.com/user-attachments/assets/3945bc0c-4104-4e98-a44c-41bb2433043e" />
+![sistem mimarisi](Documentation/charts/sistem_mimarisi.png)
 
 
 
@@ -222,6 +225,35 @@ Her iki model, 7 temel duyguyu sınıflandırmak üzere optimize edilmiştir:
 **Model çıktıları:**
 anger, sadness, joy, surprise, fear, neutral, disgust
 
+Geliştirdiğim iki modeli de Hugging Face'e yükledim. Linkleri aşağıda yer almaktadır.
+
+**Model Linkler:**
+
+| Dil | Model | Hugging Face Linki | Doğruluk (Accuracy) |
+|------|--------|--------------------|----------------------|
+| İngilizce | RoBERTa | [esracesur/roberta_weighted](https://huggingface.co/esracesur/roberta_weighted) | 0.7733 |
+| Türkçe | RoBERTa | [esracesur/roberta_turkish_emotion_recognition](https://huggingface.co/esracesur/roberta_turkish_emotion_recognition) | 0.8923 |
+
+
+<details>
+<summary><b>Model Performansı (Confusion Matrix)</b></summary>
+
+<table>
+  <tr>
+    <td><img src="model_training/English/Evaluation/emotion-dataset_test_cm.png" width="400"></td>
+    <td><img src="model_training/English/Evaluation/emotions-description_cm.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="model_training/English/Evaluation/meld_test_cm.png" width="400"></td>
+    <td><img src="model_training/English/Evaluation/text-sentiment_cm.png" width="400"></td>
+  </tr>
+</table>
+
+</details>
+
+
+
+
 ---
 
 <h4 align="left"> Kullanılan Veri Setleri</h4>
@@ -290,7 +322,7 @@ Avatarlar, statik görsel katmanların (layer) üst üste bindirilmesiyle oluşt
 
 Her avatar; arka plandan öne doğru belirli bir sıra ile yerleştirilen 3 temel görsel katmandan (layer) oluşur:
 
-| <img src="https://github.com/user-attachments/assets/87bfd58d-4f43-40d0-b4ba-d1764d34753c" width="80" alt="Saç Katmanı Görseli"/> <br> **Saç Katmanı (Hair Layer)** | <img src="https://github.com/user-attachments/assets/b5268fde-0489-4402-bd55-1e0ed39d150e" width="80" alt="Göz Katmanı Görseli"/> <br> **Göz Katmanı (Eyes Layer)** | <img src="https://github.com/user-attachments/assets/1a6cacb4-e6dd-4b88-a67c-dbce1411bef9" width="80" alt="Ağız Katmanı Görseli"/> <br> **Ağız Katmanı (Mouth Layer)** |
+| <img src="Documentation/charts/hair.png" width="80" alt="Saç Katmanı Görseli"/> <br> **Saç Katmanı (Hair Layer)** | <img src="Documentation/charts/eyes.png" width="80" alt="Göz Katmanı Görseli"/> <br> **Göz Katmanı (Eyes Layer)** | <img src="Documentation/charts/mouth.png" width="80" alt="Ağız Katmanı Görseli"/> <br> **Ağız Katmanı (Mouth Layer)** |
 | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------: |
 |                                - En alt katmanda yer alır. <br> - Farklı **saç stilleri** ve **renkleri** ile özelleştirilebilir.                                |   - Saç katmanının üzerine yerleştirilir. <br> - Duygu durumuna göre (örneğin *joy*, *sadness*, *anger*) farklı göz ifadeleri kullanılır.  |                      - En üstte yer alır. <br> - **Viseme**’lere göre dudak şekilleri konuşmadaki seslerle senkronize olur.                     |
 
@@ -302,7 +334,7 @@ Sonuçta, her duygu için 6 temel ağız şekli (REST, AA, IY, UW, FV, MBP) olu�
 Kullanıcılar, platformun arayüzünden kendi avatarlarını oluşturabilir.  
 Her seçenek, ayrı bir katmanda temsil edilir ve birbirleriyle kombine edilebilir.
 
-<img width="2384" height="522" alt="QR kodu (12)" src="https://github.com/user-attachments/assets/f130a28f-712a-4c0f-bc16-523af6fd9e40" />
+![customize](Documentation/charts/customize.png)
 
 <div align="center">
 
@@ -364,7 +396,7 @@ Her seçenek, ayrı bir katmanda temsil edilir ve birbirleriyle kombine edilebil
 EmotiVoice Studio, **viseme** tabanlı konuşma animasyonu sistemine sahiptir.  
 Visemeler, sesli konuşmadaki harf seslerinin (fonemlerin) görsel karşılığı olan dudak şekilleridir.  
 
-<img width="4853" height="909" alt="QR kodu (16)" src="https://github.com/user-attachments/assets/d2b288ca-9c83-4101-9b73-57124cbc7cc0" />
+![viseme](Documentation/charts/viseme.png)
 
 Örneğin:
 
